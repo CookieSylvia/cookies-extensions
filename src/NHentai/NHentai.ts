@@ -13,25 +13,29 @@ import {
     TagType,
 } from 'paperback-extensions-common'
 
-export const TemplateInfo: SourceInfo = {
-    version: '1.0.0',
-    name: 'Template',
+export const NHentaiInfo: SourceInfo = {
+    version: '0.1.0',
+    name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
     authorWebsite: 'https://github.com/ItemCookie',
-    description: 'Template extension for reference.',
-    contentRating: ContentRating.EVERYONE,
-    websiteBaseURL: 'https://itemcookie.net',
+    description: 'Extension which pulls 18+ content from nhentai.',
+    contentRating: ContentRating.ADULT,
+    websiteBaseURL: 'https://nhentai.net',
     language: LanguageCode.ENGLISH,
     sourceTags: [
         {
-            text: 'Template',
-            type: TagType.GREY,
+            text: '18+',
+            type: TagType.YELLOW,
+        },
+        {
+            text: 'Cloudflare',
+            type: TagType.RED,
         },
     ],
 }
 
-export class Template extends Source {
+export class NHentai extends Source {
     readonly requestManager = createRequestManager({
         requestsPerSecond: 3,
         requestTimeout: 15000,

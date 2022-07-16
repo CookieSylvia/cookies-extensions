@@ -9,12 +9,12 @@ import { SearchRequest } from 'paperback-extensions-common'
 import cheerio from 'cheerio'
 
 // Source Imports
-import { Template } from '../Template/Template'
+import { NHentai } from '../NHentai/NHentai'
 
-describe('Template tests (id: template)', async () => {
+describe('nhentai tests (id: template)', async () => {
     
     const wrapper = new APIWrapper()
-    const source = new Template(cheerio)
+    const source = new NHentai(cheerio)
     const expect = chai.expect
     chai.use(chaiAsPromised)
     
