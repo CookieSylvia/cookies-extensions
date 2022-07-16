@@ -1,7 +1,7 @@
 {
   "name": "cookies-extensions",
   "version": "1.0.0",
-  "repositoryName": "Cookie's Extensions (template)",
+  "repositoryName": "Cookie's Extensions (dev-nsfw)",
   "description": "Cookie's extensions for Paperback!",
   "scripts": {
     "bundle": "paperback bundle",
