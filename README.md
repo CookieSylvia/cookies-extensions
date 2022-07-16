@@ -7,8 +7,9 @@ Currently no support provided for these sources.
 
 | Source Type        | Description                                          | Link                                                                  |
 | :----------------- | :--------------------------------------------------- | :-------------------------------------------------------------------: |
-| Development (nsfw) | Development versions of the NSFW sources. (Unstable) | [Click me!](https://thenetsky.github.io/netskys-extensions/dev-nsfw/) |
-<!--| Development        | Development versions of the sources. (Unstable)      | [Click me!](https://thenetsky.github.io/netskys-extensions/dev/)      |-->
+| Development (nsfw) | Development versions of the NSFW sources. (Unstable) | [Click me!](https://itemcookie.github.io/cookies-extensions/dev-nsfw/) |
+<!--| Development        | Development versions of the sources. (Unstable)      | [Click me!](https://itemcookie.github.io/cookies-extensions/dev/)      |-->
+
 ---
 
 ## Other Recommended Repos (by Netsky)
