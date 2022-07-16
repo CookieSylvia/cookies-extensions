@@ -5,10 +5,9 @@ Currently no support provided for these sources.
 
 ## Current Repo
 
-| Source Type        | Description                                          | Link                                                                  |
-| :----------------- | :--------------------------------------------------- | :-------------------------------------------------------------------: |
+| Source Type        | Description                                          | Link                                                                   |
+| :----------------- | :--------------------------------------------------- | :--------------------------------------------------------------------: |
 | Development (nsfw) | Development versions of the NSFW sources. (Unstable) | [Click me!](https://itemcookie.github.io/cookies-extensions/dev-nsfw/) |
-<!--| Development        | Development versions of the sources. (Unstable)      | [Click me!](https://itemcookie.github.io/cookies-extensions/dev/)      |-->
 
 ---
 
