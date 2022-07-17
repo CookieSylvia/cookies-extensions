@@ -1,0 +1,23 @@
+{
+  "search": [
+    { "input": "123" },
+    { "input": "123", "sort": "date" },
+    { "input": "123", "language": "japanese" },
+    { "input": "123", "sort": "popular-week", "language": "chinese" },
+    { "input": "test" },
+    { "input": "test", "sort": "date" },
+    { "input": "test", "language": "japanese" },
+    { "input": "test", "sort": "popular-week", "language": "chinese" },
+    { "input": "Smartquotes “”‘’" }
+  ],
+  "replacements": {
+    "query": "+test",
+    "encoded_query": "%2Btest",
+    "extension": "png",
+    "page": "10",
+    "sort": "popular",
+    "tagId": "123",
+    "bookId": "1",
+    "mediaId": "42"
+  }
+}

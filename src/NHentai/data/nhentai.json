@@ -1,0 +1,100 @@
+{
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+  "urls": {
+    "api": "https://nhentai.net",
+    "thumbnails": "https://t.nhentai.net",
+    "images": "https://i.nhentai.net",
+    "cloudflare": "https://nhentai.net"
+  },
+  "paths": {
+    "search": {
+      "path": "/api/galleries/search?query={encoded_query}&page={page}",
+      "url": "api"
+    },
+    "searchSorted": {
+      "path": "/api/galleries/search?query={encoded_query}&page={page}&sort={sort}",
+      "url": "api"
+    },
+    "searchFallback": {
+      "path": "/search?q={encoded_query}&page={page}",
+      "url": "api"
+    },
+    "searchSortedFallback": {
+      "path": "/search?q={encoded_query}&page={page}&sort={sort}",
+      "url": "api"
+    },
+    "gallery": {
+      "path": "/api/gallery/{bookId}",
+      "url": "api"
+    },
+    "galleryCover": {
+      "path": "/galleries/{mediaId}/cover.{extension}",
+      "url": "thumbnails"
+    },
+    "galleryPage": {
+      "path": "/galleries/{mediaId}/{page}.{extension}",
+      "url": "images"
+    },
+    "galleryPageThumbnail": {
+      "path": "/galleries/{mediaId}/{page}t.{extension}",
+      "url": "thumbnails"
+    }
+  },
+  "languages": [
+    {
+      "name": "Include All",
+      "localized": "Include All",
+      "source": "_all",
+      "internal": "_unknown",
+      "order": 0
+    },
+    {
+      "name": "English",
+      "localized": "English",
+      "source": "english",
+      "internal": "en",
+      "tag": 12227,
+      "default": true,
+      "order": 1
+    },
+    {
+      "name": "Japanese",
+      "localized": "日本語",
+      "source": "japanese",
+      "internal": "ja",
+      "tag": 6346,
+      "order": 2
+    },
+    {
+      "name": "Chinese (Simplified)",
+      "localized": "中文 (简化字)",
+      "source": "chinese",
+      "internal": "zh",
+      "tag": 29963,
+      "order": 3
+    }
+  ],
+  "sorting": [
+    {
+      "name": "Popular all-time",
+      "source": "popular",
+      "default": true,
+      "order": 1
+    },
+    {
+      "name": "Popular this week",
+      "source": "popular-week",
+      "order": 2
+    },
+    {
+      "name": "Popular today",
+      "source": "popular-today",
+      "order": 3
+    },
+    {
+      "name": "Recent",
+      "source": "date",
+      "order": 0
+    }
+  ]
+}
