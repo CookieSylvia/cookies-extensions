@@ -12,7 +12,7 @@ module.exports = {
     plugins: ['canonical', '@typescript-eslint'],
     rules: {
         '@typescript-eslint/indent': ['error', 4],
-        quotes: ['error', 'single'],
+        quotes: ['error', 'single', { avoidEscape: true }],
         semi: ['error', 'never'],
         'comma-dangle': ['error', 'always-multiline'],
         'prefer-arrow-callback': 'error',
