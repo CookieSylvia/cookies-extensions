@@ -29,6 +29,7 @@ jobs:
 
       - name: Checkout existing bundles
         uses: actions/checkout@v3
+        continue-on-error: true
         with:
           ref: gh-pages
           path: bundles
@@ -36,10 +37,8 @@ jobs:
       - run: npm install
       - run: npm run bundle -- --folder=${{ steps.extract_branch.outputs.branch }}
 
-      - name: Deploy
-        uses: s0/git-publish-subdir-action@master
-        env:
-          REPO: self
-          BRANCH: gh-pages
-          FOLDER: bundles
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: bundles
