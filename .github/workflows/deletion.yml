@@ -24,10 +24,8 @@ jobs:
 
       - run: rm -rf bundles/${{ github.event.ref }}
 
-      - name: Deploy
-        uses: s0/git-publish-subdir-action@master
-        env:
-          REPO: self
-          BRANCH: gh-pages
-          FOLDER: bundles
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: bundles
