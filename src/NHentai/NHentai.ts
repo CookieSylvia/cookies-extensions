@@ -39,7 +39,7 @@ import {
 import { checkCloudflare } from './Utils'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -60,7 +60,7 @@ export const NHentaiInfo: SourceInfo = {
     ],
 }
 
-// TODO(High): Create tests
+// TODO(High): Figure out how to bypass Cloudflare when testing
 // TODO(Low): Support multiple languages (AND operator) when searching & subtitletext
 export class NHentai extends Source {
     private readonly interceptor: RequestInterceptor = {

@@ -8,7 +8,8 @@
     { "input": "test", "sort": "date" },
     { "input": "test", "language": "japanese" },
     { "input": "test", "sort": "popular-week", "language": "chinese" },
-    { "input": "Smartquotes “”‘’" }
+    { "input": "Broken", "sort": "badsort", "language": "badlang" },
+    { "input": "Smartquotes “”‘’", "sort": "popular-today" }
   ],
   "replacements": {
     "query": "+test",

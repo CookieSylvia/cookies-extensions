@@ -14,7 +14,9 @@ import {
     dumbify, 
 } from '../Utils'
 import { BookParser } from './BookParser'
+import { LangDefs } from './Language'
 import { Requests } from './Requests'
+import { SortDefs } from './Sorting'
 
 export interface CreateSearch {
     suffix?: string
@@ -64,7 +66,7 @@ export const Search: SearchModel = {
 
         if (shouldStop) {
             return {
-                data: 'Was asked to stop',
+                data: 'Search should stop',
                 metadata: {
                     shouldStop: true,
                 },
@@ -84,7 +86,16 @@ export const Search: SearchModel = {
                     },
                 }
             }
-            // fallthrough - It might not actually be a bookId?
+            if (data.status === 404) {
+                return {
+                    tiles: [],
+                    data: `BookId ${ctx.text} does not exist`,
+                    metadata: {
+                        shouldStop: true,
+                    },
+                }
+            }
+            throw new Error(`Search Error ${data.status}: ${data.data}`)
         }
 
         while (nextPage <= maxPage) {
@@ -176,12 +187,12 @@ export const Search: SearchModel = {
                 bookId: true,
             }
         }
-        const lang = options?.language ?? '_'
+        const lang = LangDefs.getSourceCodes().find(lang => lang === options?.language) ?? '_'
         const end = options?.suffix ?? ''
         const suffix = `${!lang.startsWith('_') ? `language:${lang}` : ''} ${end}`.trim()
         return {
             text: dumbify(text != undefined ? `${text} ${suffix}` : suffix),
-            sorting: options?.sorting,
+            sorting: SortDefs.getSourceCodes().find(sort => sort === options?.sorting),
         }
     },
 
