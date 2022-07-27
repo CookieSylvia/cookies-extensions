@@ -371,7 +371,7 @@ const models_1 = require("./models");
 const Settings_1 = require("./Settings");
 const Utils_1 = require("./Utils");
 exports.NHentaiInfo = {
-    version: '1.0.1',
+    version: '1.0.2',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -392,7 +392,8 @@ exports.NHentaiInfo = {
     ],
 };
 // TODO(High): Figure out how to bypass Cloudflare when testing
-// TODO(Low): Support multiple languages (AND operator) when searching & subtitletext
+// TODO(Low): Support searching for multiple languages (AND operator, Include & Exclude)
+// TODO(Lower): Update settings to change languages to match search functionality
 class NHentai extends paperback_extensions_common_1.Source {
     constructor() {
         super(...arguments);
@@ -743,6 +744,31 @@ const debugView = (states) => createNavigationButton({
                             ],
                         }),
                     }),
+                    createNavigationButton({
+                        id: 'debug_subtitle_tests',
+                        label: 'Subtitle Tests',
+                        value: '',
+                        form: createForm({
+                            onSubmit: async () => undefined,
+                            validate: async () => true,
+                            sections: async () => [
+                                createSection({
+                                    id: 'debug_subtitle_tests_data',
+                                    header: 'Output',
+                                    rows: async () => {
+                                        let count = 0;
+                                        return await Promise.all((0, Utils_1.combos)(models_1.LangDefs.getSourceCodes(true)).map(async (subs) => {
+                                            return createMultilineLabel({
+                                                id: `debug_subtitle_tests_data_${count++}`,
+                                                label: subs.length !== 0 ? subs.join(', ') : 'none',
+                                                value: models_1.LangDefs.getSubtitle(subs),
+                                            });
+                                        }));
+                                    },
+                                }),
+                            ],
+                        }),
+                    }),
                 ],
             }),
             createSection({
@@ -952,26 +978,32 @@ exports.Data = {
 },{"./data/debug.json":52,"./data/nhentai.json":53}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkCloudflare = exports.dumbify = exports.LangLookup = exports.SimpleIsoMappings = exports.format = void 0;
-const paperback_extensions_common_1 = require("paperback-extensions-common");
+exports.checkCloudflare = exports.dumbify = exports.combos = exports.orderedSortWith = exports.orderedSort = exports.format = void 0;
 const format = (source, replacements) => {
     return source.replace(/{(\w+)}/g, (placeholderWithDelimiters, placeholderWithoutDelimiters) => replacements[placeholderWithoutDelimiters] ?? placeholderWithDelimiters);
 };
 exports.format = format;
-exports.SimpleIsoMappings = {
-    _unknown: paperback_extensions_common_1.LanguageCode.UNKNOWN,
-    en: paperback_extensions_common_1.LanguageCode.ENGLISH,
-    ja: paperback_extensions_common_1.LanguageCode.JAPANESE,
-    zh: paperback_extensions_common_1.LanguageCode.CHINEESE,
+const orderedSort = (sortable) => {
+    return [...sortable].sort((a, b) => (a?.order ?? Infinity) - (b?.order ?? Infinity));
 };
-const LangLookup = (code) => {
-    if (code == undefined) {
-        return paperback_extensions_common_1.LanguageCode.UNKNOWN;
-    }
-    const lower = code.toLowerCase();
-    return exports.SimpleIsoMappings[lower] ?? paperback_extensions_common_1.LanguageCode.UNKNOWN;
+exports.orderedSort = orderedSort;
+const orderedSortWith = (sortable, map) => {
+    const ordered = sortable.map((value, idx, arr) => {
+        return {
+            value: value,
+            order: map(value, idx, arr),
+        };
+    });
+    return (0, exports.orderedSort)(ordered).map((order) => order.value);
 };
-exports.LangLookup = LangLookup;
+exports.orderedSortWith = orderedSortWith;
+const combos = (arr, minLength = 0) => {
+    // Wtf even is this... but it works.
+    // https://stackoverflow.com/a/42531964
+    const combinations = new Array(1 << arr.length).fill(undefined).map((_, i) => arr.filter((_, j) => i & (1 << j)));
+    return combinations.filter(a => a.length >= minLength);
+};
+exports.combos = combos;
 /**
  * iOS (& macOS?) does this magical thing called
  * smart punctuation, they cause errors &
@@ -992,7 +1024,7 @@ const checkCloudflare = (status) => {
 };
 exports.checkCloudflare = checkCloudflare;
 
-},{"paperback-extensions-common":4}],52:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 module.exports={
     "search": [
         { "input": "123" },
@@ -1064,6 +1096,7 @@ module.exports={
     "languages": [
         {
             "name": "Include All",
+            "short": "??",
             "localized": "Include All",
             "source": "_all",
             "internal": "_unknown",
@@ -1071,26 +1104,29 @@ module.exports={
         },
         {
             "name": "English",
+            "short": "EN",
             "localized": "English",
             "source": "english",
-            "internal": "en",
+            "internal": "gb",
             "tag": 12227,
             "default": true,
             "order": 1
         },
         {
             "name": "Japanese",
+            "short": "JA",
             "localized": "日本語",
             "source": "japanese",
-            "internal": "ja",
+            "internal": "jp",
             "tag": 6346,
             "order": 2
         },
         {
             "name": "Chinese (Simplified)",
+            "short": "ZH",
             "localized": "中文 (简化字)",
             "source": "chinese",
-            "internal": "zh",
+            "internal": "cn",
             "tag": 29963,
             "order": 3
         }
@@ -1147,7 +1183,7 @@ const getLanguage = (book) => {
             languages.push(tag.name);
         }
     }
-    return Language_1.LangDefs.getSourceCodes(true).find((source) => languages.includes(source)) ?? '';
+    return Language_1.LangDefs.getFilteredSources(languages);
 };
 exports.BookParser = {
     manga: (book) => {
@@ -1172,7 +1208,7 @@ exports.BookParser = {
         id: book.bookId.toString(),
         image: Paths_1.Paths.galleryCover(book.mediaId, book.images.cover.type),
         subtitleText: createIconText({
-            text: Language_1.LangDefs.getName(getLanguage(book)),
+            text: Language_1.LangDefs.getSubtitle(getLanguage(book)),
         }),
         title: createIconText({
             text: book.titles.pretty,
@@ -1182,7 +1218,7 @@ exports.BookParser = {
         id: tile.bookId,
         image: tile.thumbnail,
         subtitleText: createIconText({
-            text: tile.language != undefined ? `${Language_1.LangDefs.getName(tile.language)}?` : 'Fallback',
+            text: tile.languages.length > 0 ? `${Language_1.LangDefs.getSubtitle(tile.languages)}?` : 'Fallback',
         }),
         title: createIconText({
             text: tile.title,
@@ -1193,7 +1229,7 @@ exports.BookParser = {
         mangaId: mangaId,
         chapNum: 1,
         name: book.titles.english,
-        langCode: Language_1.LangDefs.getInternalCode(getLanguage(book)),
+        langCode: Language_1.LangDefs.getPriorityLangCode(getLanguage(book)),
         time: new Date(book.uploaded),
     }),
     chapterDetails: (book, mangaId) => createChapterDetails({
@@ -1290,7 +1326,7 @@ exports.GalleryParser = {
                 bookId,
                 title,
                 thumbnail,
-                language: tagIds.map((ids) => Language_1.LangDefs.getSourceFromTag(ids)).find((lang) => lang != undefined),
+                languages: Language_1.LangDefs.getSourcesFromTags(tagIds, true),
             });
         });
         return tiles;
@@ -1334,30 +1370,73 @@ arguments[4][5][0].apply(exports,arguments)
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LangDefs = exports.LanguageDefinitions = void 0;
+const paperback_extensions_common_1 = require("paperback-extensions-common");
 const SourceData_1 = require("../SourceData");
 const Utils_1 = require("../Utils");
 class LanguageDefinitions {
     constructor(data) {
         this.data = data;
+        this.sorted = (0, Utils_1.orderedSort)(data);
     }
     getSourceCodes(sort = false) {
-        let language = this.data;
-        if (sort) {
-            language = [...language].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
-        }
-        return language.map((lang) => lang.source);
+        return (sort ? this.sorted : this.data).map((lang) => lang.source);
     }
+    getDefinition(source, sort = false) {
+        return (sort ? this.sorted : this.data).find(lang => lang.source == source);
+    }
+    // name -> Unknown '<source>'
     getName(source) {
-        return this.data.find((lang) => lang.source == source)?.name ?? `Unknown '${source}'`;
+        return this.getDefinition(source)?.name ?? `Unknown '${source}'`;
     }
+    // short -> <source>[2,-2].upper()
+    getShortName(source) {
+        return this.getDefinition(source)?.short ?? source.substring(2, -2).toUpperCase();
+    }
+    //  0: Unknown
+    //  1: English
+    //  2: EN, JA
+    //  3: EN, JA, ZH
+    getSubtitle(sources, sort = true) {
+        if (sources.length <= 0) {
+            return 'Unknown';
+        }
+        if (sources.length === 1) {
+            return this.getName(sources[0] ?? 'Unknown');
+        }
+        return (sort ? this.sorted : this.data)
+            .filter((lang) => sources.includes(lang.source))
+            .map((lang) => lang.short)
+            .join(', ');
+    }
+    // localized -> name...
     getLocalizedName(source) {
-        return this.data.find((lang) => lang.source == source)?.localized ?? `Unknown '${source}'`;
+        return this.getDefinition(source)?.localized ?? this.getName(source);
     }
-    getInternalCode(source) {
-        return (0, Utils_1.LangLookup)(this.data.find((lang) => lang.source == source)?.internal);
+    getPriorityLangCode(sources) {
+        const sorted = this.getSorted(sources);
+        return this.getLanguageCode(sorted[0] ?? '_all');
+    }
+    getLanguageCode(source) {
+        // prettier-ignore
+        return this.getDefinition(source)?.internal ?? paperback_extensions_common_1.LanguageCode.UNKNOWN;
     }
     getTagId(source) {
-        return this.data.find((lang) => lang.source == source)?.tag ?? -1;
+        return this.getDefinition(source)?.tag ?? -1;
+    }
+    getFilteredSources(sources, sort = false) {
+        return this.getSourceCodes(sort).filter(source => sources.includes(source));
+    }
+    getSorted(sources) {
+        return (0, Utils_1.orderedSortWith)(sources, (source) => this.getOrder(source));
+    }
+    getOrder(source) {
+        return this.getDefinition(source)?.order ?? Infinity;
+    }
+    getSourcesFromTags(tagIds, sort = false) {
+        const sources = tagIds
+            .map((tagId) => this.getSourceFromTag(tagId))
+            .filter((sources) => sources != undefined);
+        return sort ? this.getSorted(sources) : sources;
     }
     getSourceFromTag(tagId) {
         return this.data.find((lang) => lang.tag == tagId)?.source;
@@ -1369,7 +1448,7 @@ class LanguageDefinitions {
 exports.LanguageDefinitions = LanguageDefinitions;
 exports.LangDefs = new LanguageDefinitions(SourceData_1.Data.nhentai.languages);
 
-},{"../SourceData":50,"../Utils":51}],63:[function(require,module,exports){
+},{"../SourceData":50,"../Utils":51,"paperback-extensions-common":4}],63:[function(require,module,exports){
 arguments[4][5][0].apply(exports,arguments)
 },{"dup":5}],64:[function(require,module,exports){
 "use strict";
@@ -1610,16 +1689,14 @@ exports.Search = {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SortDefs = exports.SortingDefinitions = void 0;
 const SourceData_1 = require("../SourceData");
+const Utils_1 = require("../Utils");
 class SortingDefinitions {
     constructor(data) {
         this.data = data;
+        this.sorted = (0, Utils_1.orderedSort)(data);
     }
     getSourceCodes(sort = false) {
-        let sorting = this.data;
-        if (sort) {
-            sorting = [...sorting].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
-        }
-        return sorting.map((sort) => sort.source);
+        return (sort ? this.sorted : this.data).map((sort) => sort.source);
     }
     getName(source) {
         return this.data.find((sort) => sort.source == source)?.name ?? `Unknown '${source}'`;
@@ -1631,7 +1708,7 @@ class SortingDefinitions {
 exports.SortingDefinitions = SortingDefinitions;
 exports.SortDefs = new SortingDefinitions(SourceData_1.Data.nhentai.sorting);
 
-},{"../SourceData":50}],68:[function(require,module,exports){
+},{"../SourceData":50,"../Utils":51}],68:[function(require,module,exports){
 arguments[4][5][0].apply(exports,arguments)
 },{"dup":5}],69:[function(require,module,exports){
 "use strict";
