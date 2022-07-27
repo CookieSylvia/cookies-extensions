@@ -40,7 +40,7 @@ import {
 import { checkCloudflare } from './Utils'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '1.1.0',
+    version: '1.1.1',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',

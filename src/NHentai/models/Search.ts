@@ -44,6 +44,11 @@ export interface SearchOptions {
      * How the results should be sorted.
      */
     sorting?: string
+    /**
+     * What the search should be in case that it
+     * is empty. (Empty searches results in errors)
+     */
+    empty?: string
 }
 
 /**
@@ -290,7 +295,7 @@ export const Search: SearchModel = {
 
         const extras = `${langStr} ${suffix}`.trim()
         return {
-            text: dumbify(text != undefined ? `${text} ${extras}`.trim() : extras) || EmptySearch,
+            text: dumbify(text != undefined ? `${text} ${extras}`.trim() : extras) || options?.empty || EmptySearch,
             sorting,
         }
     },
@@ -317,6 +322,7 @@ export const Search: SearchModel = {
             suffix: options?.suffix ?? (await getSearchSuffix(states)),
             languages: langs,
             sorting: options?.sorting ?? (await getSorting(states)),
+            empty: options?.empty,
         })
     },
 }

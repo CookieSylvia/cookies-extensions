@@ -343,15 +343,15 @@ export const debugView = (states: SourceStateManager) =>
                             }),
                         }),
                         createNavigationButton({
-                            id: 'debug_langaugebuild_tests',
-                            label: 'Langauge Building',
+                            id: 'debug_languagebuild_tests',
+                            label: 'Language Building',
                             value: '',
                             form: createForm({
                                 onSubmit: async () => undefined,
                                 validate: async () => true,
                                 sections: async () => [
                                     createSection({
-                                        id: 'debug_langaugebuild_tests_data',
+                                        id: 'debug_languagebuild_tests_data',
                                         header: 'Output',
                                         rows: async () => {
                                             let count = 0
@@ -361,7 +361,7 @@ export const debugView = (states: SourceStateManager) =>
                                                     ...LangDefs.getSourceCodes(true).map((a) => `-${a}`),
                                                 ]).map(async (lang) => {
                                                     return createMultilineLabel({
-                                                        id: `debug_langaugebuild_tests_data_${count++}`,
+                                                        id: `debug_languagebuild_tests_data_${count++}`,
                                                         label: lang.length > 0 ? lang.join(', ') : 'none',
                                                         value:
                                                             Search.create(undefined, {
@@ -371,7 +371,8 @@ export const debugView = (states: SourceStateManager) =>
                                                                         .filter((a) => a.startsWith('-'))
                                                                         .map((a) => a.substring(1)),
                                                                 },
-                                                            }).text ||
+                                                                empty: '<empty>',
+                                                            }).text.replace('<empty>', '') ||
                                                             // prettier-ignore
                                                             `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                                     })
@@ -383,15 +384,15 @@ export const debugView = (states: SourceStateManager) =>
                             }),
                         }),
                         createNavigationButton({
-                            id: 'debug_langaugebuildsettings_tests',
-                            label: 'Langauge Building w/default',
+                            id: 'debug_languagebuildsettings_tests',
+                            label: 'Language Building w/default',
                             value: '',
                             form: createForm({
                                 onSubmit: async () => undefined,
                                 validate: async () => true,
                                 sections: async () => [
                                     createSection({
-                                        id: 'debug_langaugebuildsettings_tests_data',
+                                        id: 'debug_languagebuildsettings_tests_data',
                                         header: 'Output',
                                         rows: async () => {
                                             let count = 0
@@ -401,7 +402,7 @@ export const debugView = (states: SourceStateManager) =>
                                                     ...LangDefs.getSourceCodes(true).map((a) => `-${a}`),
                                                 ]).map(async (lang) => {
                                                     return createMultilineLabel({
-                                                        id: `debug_langaugebuildsettings_tests_data_${count++}`,
+                                                        id: `debug_languagebuildsettings_tests_data_${count++}`,
                                                         label: lang.length > 0 ? lang.join(', ') : 'none',
                                                         value:
                                                             // prettier-ignore
@@ -413,7 +414,8 @@ export const debugView = (states: SourceStateManager) =>
                                                                         .map((a) => a.substring(1)),
                                                                 },
                                                                 suffix: '',
-                                                            })).text ||
+                                                                empty: '<empty>',
+                                                            })).text.replace('<empty>', '') ||
                                                             // prettier-ignore
                                                             `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                                     })
