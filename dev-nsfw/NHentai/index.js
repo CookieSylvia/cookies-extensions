@@ -371,7 +371,7 @@ const models_1 = require("./models");
 const Settings_1 = require("./Settings");
 const Utils_1 = require("./Utils");
 exports.NHentaiInfo = {
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -391,7 +391,7 @@ exports.NHentaiInfo = {
         },
     ],
 };
-// TODO(High): Create tests
+// TODO(High): Figure out how to bypass Cloudflare when testing
 // TODO(Low): Support multiple languages (AND operator) when searching & subtitletext
 class NHentai extends paperback_extensions_common_1.Source {
     constructor() {
@@ -1003,7 +1003,8 @@ module.exports={
         { "input": "test", "sort": "date" },
         { "input": "test", "language": "japanese" },
         { "input": "test", "sort": "popular-week", "language": "chinese" },
-        { "input": "Smartquotes “”‘’" }
+        { "input": "Broken", "sort": "badsort", "language": "badlang" },
+        { "input": "Smartquotes “”‘’", "sort": "popular-today" }
     ],
     "replacements": {
         "query": "+test",
@@ -1474,7 +1475,9 @@ exports.Search = void 0;
 const Settings_1 = require("../Settings");
 const Utils_1 = require("../Utils");
 const BookParser_1 = require("./BookParser");
+const Language_1 = require("./Language");
 const Requests_1 = require("./Requests");
+const Sorting_1 = require("./Sorting");
 // The nhentai api is veery unstable when searching, and fails often
 // so we scrape the site as a fallback when we get expected errors.
 // As a last resort, the page will be outright skipped.
@@ -1485,7 +1488,7 @@ exports.Search = {
         const shouldStop = metadata?.shouldStop ?? nextPage > maxPage;
         if (shouldStop) {
             return {
-                data: 'Was asked to stop',
+                data: 'Search should stop',
                 metadata: {
                     shouldStop: true,
                 },
@@ -1503,7 +1506,16 @@ exports.Search = {
                     },
                 };
             }
-            // fallthrough - It might not actually be a bookId?
+            if (data.status === 404) {
+                return {
+                    tiles: [],
+                    data: `BookId ${ctx.text} does not exist`,
+                    metadata: {
+                        shouldStop: true,
+                    },
+                };
+            }
+            throw new Error(`Search Error ${data.status}: ${data.data}`);
         }
         while (nextPage <= maxPage) {
             // Api
@@ -1576,12 +1588,12 @@ exports.Search = {
                 bookId: true,
             };
         }
-        const lang = options?.language ?? '_';
+        const lang = Language_1.LangDefs.getSourceCodes().find(lang => lang === options?.language) ?? '_';
         const end = options?.suffix ?? '';
         const suffix = `${!lang.startsWith('_') ? `language:${lang}` : ''} ${end}`.trim();
         return {
             text: (0, Utils_1.dumbify)(text != undefined ? `${text} ${suffix}` : suffix),
-            sorting: options?.sorting,
+            sorting: Sorting_1.SortDefs.getSourceCodes().find(sort => sort === options?.sorting),
         };
     },
     createWithSettings: async (states, text, options) => {
@@ -1593,7 +1605,7 @@ exports.Search = {
     },
 };
 
-},{"../Settings":49,"../Utils":51,"./BookParser":55,"./Requests":65}],67:[function(require,module,exports){
+},{"../Settings":49,"../Utils":51,"./BookParser":55,"./Language":62,"./Requests":65,"./Sorting":67}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SortDefs = exports.SortingDefinitions = void 0;
