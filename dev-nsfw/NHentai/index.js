@@ -371,7 +371,7 @@ const models_1 = require("./models");
 const Settings_1 = require("./Settings");
 const Utils_1 = require("./Utils");
 exports.NHentaiInfo = {
-    version: '1.1.0',
+    version: '1.1.1',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -866,15 +866,15 @@ const debugView = (states) => createNavigationButton({
                         }),
                     }),
                     createNavigationButton({
-                        id: 'debug_langaugebuild_tests',
-                        label: 'Langauge Building',
+                        id: 'debug_languagebuild_tests',
+                        label: 'Language Building',
                         value: '',
                         form: createForm({
                             onSubmit: async () => undefined,
                             validate: async () => true,
                             sections: async () => [
                                 createSection({
-                                    id: 'debug_langaugebuild_tests_data',
+                                    id: 'debug_languagebuild_tests_data',
                                     header: 'Output',
                                     rows: async () => {
                                         let count = 0;
@@ -883,7 +883,7 @@ const debugView = (states) => createNavigationButton({
                                             ...models_1.LangDefs.getSourceCodes(true).map((a) => `-${a}`),
                                         ]).map(async (lang) => {
                                             return createMultilineLabel({
-                                                id: `debug_langaugebuild_tests_data_${count++}`,
+                                                id: `debug_languagebuild_tests_data_${count++}`,
                                                 label: lang.length > 0 ? lang.join(', ') : 'none',
                                                 value: models_1.Search.create(undefined, {
                                                     languages: {
@@ -892,7 +892,8 @@ const debugView = (states) => createNavigationButton({
                                                             .filter((a) => a.startsWith('-'))
                                                             .map((a) => a.substring(1)),
                                                     },
-                                                }).text ||
+                                                    empty: '<empty>',
+                                                }).text.replace('<empty>', '') ||
                                                     // prettier-ignore
                                                     `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                             });
@@ -903,15 +904,15 @@ const debugView = (states) => createNavigationButton({
                         }),
                     }),
                     createNavigationButton({
-                        id: 'debug_langaugebuildsettings_tests',
-                        label: 'Langauge Building w/default',
+                        id: 'debug_languagebuildsettings_tests',
+                        label: 'Language Building w/default',
                         value: '',
                         form: createForm({
                             onSubmit: async () => undefined,
                             validate: async () => true,
                             sections: async () => [
                                 createSection({
-                                    id: 'debug_langaugebuildsettings_tests_data',
+                                    id: 'debug_languagebuildsettings_tests_data',
                                     header: 'Output',
                                     rows: async () => {
                                         let count = 0;
@@ -920,7 +921,7 @@ const debugView = (states) => createNavigationButton({
                                             ...models_1.LangDefs.getSourceCodes(true).map((a) => `-${a}`),
                                         ]).map(async (lang) => {
                                             return createMultilineLabel({
-                                                id: `debug_langaugebuildsettings_tests_data_${count++}`,
+                                                id: `debug_languagebuildsettings_tests_data_${count++}`,
                                                 label: lang.length > 0 ? lang.join(', ') : 'none',
                                                 value: 
                                                 // prettier-ignore
@@ -932,7 +933,8 @@ const debugView = (states) => createNavigationButton({
                                                             .map((a) => a.substring(1)),
                                                     },
                                                     suffix: '',
-                                                })).text ||
+                                                    empty: '<empty>',
+                                                })).text.replace('<empty>', '') ||
                                                     // prettier-ignore
                                                     `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                             });
@@ -1894,7 +1896,7 @@ exports.Search = {
         const langStr = !includeAll ? `${includeLangStr} ${excludeLangStr}`.trim() : '';
         const extras = `${langStr} ${suffix}`.trim();
         return {
-            text: (0, Utils_1.dumbify)(text != undefined ? `${text} ${extras}`.trim() : extras) || exports.EmptySearch,
+            text: (0, Utils_1.dumbify)(text != undefined ? `${text} ${extras}`.trim() : extras) || options?.empty || exports.EmptySearch,
             sorting,
         };
     },
@@ -1915,6 +1917,7 @@ exports.Search = {
             suffix: options?.suffix ?? (await (0, Settings_1.getSearchSuffix)(states)),
             languages: langs,
             sorting: options?.sorting ?? (await (0, Settings_1.getSorting)(states)),
+            empty: options?.empty,
         });
     },
 };
