@@ -371,7 +371,7 @@ const models_1 = require("./models");
 const Settings_1 = require("./Settings");
 const Utils_1 = require("./Utils");
 exports.NHentaiInfo = {
-    version: '1.0.2',
+    version: '1.1.0',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -391,9 +391,11 @@ exports.NHentaiInfo = {
         },
     ],
 };
-// TODO(High): Figure out how to bypass Cloudflare when testing
-// TODO(Low): Support searching for multiple languages (AND operator, Include & Exclude)
-// TODO(Lower): Update settings to change languages to match search functionality
+// TODO(High): Figure out how to bypass Cloudflare during testing.
+// TODO(Low): Update settings to allow changing languages to match search functionality.
+// TODO(Low): Allow toggling homepage sections.
+// TODO(Low): Search could use some changes, especially to how searches are created.
+// TODO(Low): Do something about all those '// prettier-ignore' comments.
 class NHentai extends paperback_extensions_common_1.Source {
     constructor() {
         super(...arguments);
@@ -427,7 +429,11 @@ class NHentai extends paperback_extensions_common_1.Source {
         return createSection({
             id: 'main',
             header: 'Source Settings',
-            rows: async () => [(0, Settings_1.settings)(this.stateManager), (0, Settings_1.debugView)(this.stateManager), (0, Settings_1.resetSettings)(this.stateManager)],
+            rows: async () => [
+                (0, Settings_1.settings)(this.stateManager),
+                (0, Settings_1.debugView)(this.stateManager),
+                (0, Settings_1.resetSettings)(this.stateManager),
+            ],
         });
     }
     getMangaShareUrl(mangaId) {
@@ -441,9 +447,14 @@ class NHentai extends paperback_extensions_common_1.Source {
             tags: models_1.SortDefs.getSourceCodes(true).map((source) => createTag({ id: source, label: models_1.SortDefs.getName(source) })),
         });
         sections.language = createTagSection({
-            id: 'language',
-            label: 'Language (Select one)',
+            id: 'languages',
+            label: 'Languages',
             tags: models_1.LangDefs.getSourceCodes(true).map((source) => createTag({ id: source, label: models_1.LangDefs.getLocalizedName(source) })),
+        });
+        sections.other = createTagSection({
+            id: 'other',
+            label: 'Other',
+            tags: [createTag({ id: 'without_suffix', label: 'Without Suffix' })],
         });
         return Object.values(sections);
     }
@@ -451,7 +462,7 @@ class NHentai extends paperback_extensions_common_1.Source {
         return false;
     }
     async supportsTagExclusion() {
-        return false;
+        return true;
     }
     async getMangaDetails(mangaId) {
         const data = await models_1.Requests.book(this.requestManager, mangaId);
@@ -470,10 +481,15 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     async getSearchResults(query, metadata) {
         const ctx = await models_1.Search.createWithSettings(this.stateManager, query.title, {
-            language: this.resolveLangauge(query.includedTags),
+            languages: {
+                include: this.resolveLangauges(query.includedTags),
+                exclude: this.resolveLangauges(query.excludedTags),
+            },
             sorting: this.resolveSorting(query.includedTags),
+            suffix: this.resolvesTag(query.includedTags, 'without_suffix') ? '' : undefined,
         });
-        const results = await models_1.Search.search(ctx, this.getSearchOptions(), metadata);
+        await (0, Settings_1.setLatestSearch)(this.stateManager, ctx.text);
+        const results = await models_1.Search.search(ctx, this.getSearchObjects(), metadata);
         return createPagedResults({
             results: results.tiles ?? [],
             metadata: results.metadata,
@@ -490,14 +506,14 @@ class NHentai extends paperback_extensions_common_1.Source {
         }
         for (const section of sections) {
             const ctx = await models_1.Search.createWithSettings(this.stateManager, undefined, { sorting: section.id });
-            const results = await models_1.Search.search(ctx, this.getSearchOptions(), {});
+            const results = await models_1.Search.search(ctx, this.getSearchObjects(), {});
             section.items = results.tiles;
             sectionCallback(section);
         }
     }
     async getViewMoreItems(homepageSectionId, metadata) {
         const ctx = await models_1.Search.createWithSettings(this.stateManager, undefined, { sorting: homepageSectionId });
-        const results = await models_1.Search.search(ctx, this.getSearchOptions(), metadata);
+        const results = await models_1.Search.search(ctx, this.getSearchObjects(), metadata);
         return createPagedResults({
             results: results.tiles ?? [],
             metadata: results.metadata,
@@ -513,7 +529,7 @@ class NHentai extends paperback_extensions_common_1.Source {
             },
         });
     }
-    getSearchOptions() {
+    getSearchObjects() {
         return {
             requests: this.requestManager,
             states: this.stateManager,
@@ -528,11 +544,14 @@ class NHentai extends paperback_extensions_common_1.Source {
         }
         return data.parsed;
     }
-    resolveLangauge(includedTags) {
-        return includedTags?.find((tag) => models_1.LangDefs.data.map((def) => def.source).includes(tag.id))?.id;
+    resolveLangauges(tags) {
+        return models_1.LangDefs.getFilteredSources(tags?.map(tag => tag.id) ?? []);
     }
     resolveSorting(includedTags) {
         return includedTags?.find((tag) => models_1.SortDefs.data.map((def) => def.source).includes(tag.id))?.id;
+    }
+    resolvesTag(includedTags, id) {
+        return includedTags?.find(tag => tag.id === id) != undefined;
     }
 }
 exports.NHentai = NHentai;
@@ -540,7 +559,7 @@ exports.NHentai = NHentai;
 },{"./Settings":49,"./Utils":51,"./models":71,"paperback-extensions-common":4}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debugView = exports.resetSettings = exports.settings = exports.reset = exports.getAlwaysFallback = exports.getIncognito = exports.getSearchSuffix = exports.getSorting = exports.getLanguage = exports.retrieveAs = void 0;
+exports.debugView = exports.resetSettings = exports.settings = exports.reset = exports.getLatestSearch = exports.setLatestSearch = exports.getCollectSearches = exports.getAlwaysFallback = exports.getIncognito = exports.getSearchSuffix = exports.getSorting = exports.getLanguage = exports.retrieveAs = void 0;
 const models_1 = require("./models");
 const SourceData_1 = require("./SourceData");
 const Utils_1 = require("./Utils");
@@ -566,6 +585,20 @@ const getAlwaysFallback = async (states) => {
     return (await (0, exports.retrieveAs)(states, 'always_fallback')) ?? false;
 };
 exports.getAlwaysFallback = getAlwaysFallback;
+const getCollectSearches = async (states) => {
+    return (await (0, exports.retrieveAs)(states, 'collect_searches')) ?? false;
+};
+exports.getCollectSearches = getCollectSearches;
+const setLatestSearch = async (states, text) => {
+    if ((await (0, exports.getCollectSearches)(states)) || text === null) {
+        await states.store('latest_search', text);
+    }
+};
+exports.setLatestSearch = setLatestSearch;
+const getLatestSearch = async (states) => {
+    return (await (0, exports.retrieveAs)(states, 'latest_search')) ?? '<none>';
+};
+exports.getLatestSearch = getLatestSearch;
 const reset = async (states) => {
     await Promise.all([
         states.store('language', null),
@@ -573,6 +606,8 @@ const reset = async (states) => {
         states.store('search_suffix', null),
         states.store('incognito', null),
         states.store('always_fallback', null),
+        states.store('collect_searches', null),
+        states.store('latest_search', null),
     ]);
 };
 exports.reset = reset;
@@ -587,7 +622,6 @@ const settings = (states) => createNavigationButton({
                 states.store('sorting', values.sorting[0]),
                 states.store('search_suffix', (0, Utils_1.dumbify)(values.search_suffix)),
                 states.store('incognito', values.incognito),
-                states.store('always_fallback', values.always_fallback),
             ]);
         },
         validate: async () => true,
@@ -634,19 +668,13 @@ const settings = (states) => createNavigationButton({
             createSection({
                 id: 'web',
                 header: 'Web Requests',
-                footer: 'Always fallback is for debugging, and is limited to 1 request per second. (aka. Slow searching)',
                 rows: async () => {
-                    const values = await Promise.all([(0, exports.getIncognito)(states), (0, exports.getAlwaysFallback)(states)]);
+                    const values = await Promise.all([(0, exports.getIncognito)(states)]);
                     return [
                         createSwitch({
                             id: 'incognito',
                             label: 'Incognito',
                             value: values[0],
-                        }),
-                        createSwitch({
-                            id: 'always_fallback',
-                            label: 'Always fallback',
-                            value: values[1],
                         }),
                     ];
                 },
@@ -662,15 +690,39 @@ const resetSettings = (states) => createButton({
     onTap: async () => await (0, exports.reset)(states),
 });
 exports.resetSettings = resetSettings;
-// Debug
 const debugView = (states) => createNavigationButton({
     id: 'debug',
     label: 'Debug',
     value: '',
     form: createForm({
-        onSubmit: async () => undefined,
+        onSubmit: async (values) => {
+            await Promise.all([
+                states.store('collect_searches', values.collect_searches),
+                states.store('always_fallback', values.always_fallback),
+            ]);
+        },
         validate: async () => true,
         sections: async () => [
+            createSection({
+                id: 'debug_overview',
+                header: 'Overview',
+                footer: 'Always fallback is for debugging, and is limited to 1 request per second. (aka. Slow searching)',
+                rows: async () => {
+                    const values = await Promise.all([(0, exports.getCollectSearches)(states), (0, exports.getAlwaysFallback)(states)]);
+                    return [
+                        createSwitch({
+                            id: 'collect_searches',
+                            label: 'Collect searches',
+                            value: values[0],
+                        }),
+                        createSwitch({
+                            id: 'always_fallback',
+                            label: 'Always fallback',
+                            value: values[1],
+                        }),
+                    ];
+                },
+            }),
             createSection({
                 id: 'debug_settings',
                 header: 'Stored Settings',
@@ -681,6 +733,8 @@ const debugView = (states) => createNavigationButton({
                         (0, exports.getSearchSuffix)(states),
                         (0, exports.getIncognito)(states),
                         (0, exports.getAlwaysFallback)(states),
+                        (0, exports.getCollectSearches)(states),
+                        (0, exports.getLatestSearch)(states),
                     ]);
                     return [
                         createLabel({
@@ -708,12 +762,31 @@ const debugView = (states) => createNavigationButton({
                             label: 'Always fallback',
                             value: `${values[4] ? 'yes' : 'no'}`,
                         }),
+                        createLabel({
+                            id: 'debug_settings_collect_searches',
+                            label: 'Collect searches',
+                            value: `${values[5] ? 'yes' : 'no'}`,
+                        }),
+                        createMultilineLabel({
+                            id: 'debug_settings_latest_search',
+                            label: `Latest search${values[5] ? '' : ' (frozen)'}`,
+                            value: `${values[6]}`,
+                        }),
+                        createButton({
+                            id: 'debug_settings_clear_latest_search',
+                            label: 'Clear latest search...',
+                            value: '',
+                            onTap: async () => {
+                                await (0, exports.setLatestSearch)(states, null);
+                            },
+                        }),
                     ];
                 },
             }),
             createSection({
                 id: 'debug_search',
                 header: 'Searching',
+                footer: "Buttons suffixed with 'w/default' includes in-app settings.",
                 rows: async () => [
                     createNavigationButton({
                         id: 'debug_search_tests',
@@ -729,14 +802,37 @@ const debugView = (states) => createNavigationButton({
                                     rows: async () => {
                                         let count = 0;
                                         return await Promise.all(SourceData_1.Data.debug.search.map(async (q) => {
-                                            const ctx = await models_1.Search.createWithSettings(states, q.input, {
-                                                language: q.language,
-                                                sorting: q.sort,
-                                            });
+                                            const ctx = models_1.Search.create(q.input, q);
                                             return createMultilineLabel({
                                                 id: `debug_search_tests_data_${count++}`,
                                                 label: `BookId: ${ctx.bookId ? 'yes' : 'no'}`,
-                                                value: `Sort by: ${ctx.sorting}\nText: ${ctx.text}`,
+                                                value: `Sort by: ${ctx.sorting}\nOutput: ${ctx.text}`,
+                                            });
+                                        }));
+                                    },
+                                }),
+                            ],
+                        }),
+                    }),
+                    createNavigationButton({
+                        id: 'debug_searchsettings_tests',
+                        label: 'Search Tests w/default',
+                        value: '',
+                        form: createForm({
+                            onSubmit: async () => undefined,
+                            validate: async () => true,
+                            sections: async () => [
+                                createSection({
+                                    id: 'debug_searchsettings_tests_data',
+                                    header: 'Output',
+                                    rows: async () => {
+                                        let count = 0;
+                                        return await Promise.all(SourceData_1.Data.debug.search.map(async (q) => {
+                                            const ctx = await models_1.Search.createWithSettings(states, q.input, q);
+                                            return createMultilineLabel({
+                                                id: `debug_searchsettings_tests_data_${count++}`,
+                                                label: `BookId: ${ctx.bookId ? 'yes' : 'no'}`,
+                                                value: `Sort by: ${ctx.sorting}\nOutput: ${ctx.text}`,
                                             });
                                         }));
                                     },
@@ -760,8 +856,85 @@ const debugView = (states) => createNavigationButton({
                                         return await Promise.all((0, Utils_1.combos)(models_1.LangDefs.getSourceCodes(true)).map(async (subs) => {
                                             return createMultilineLabel({
                                                 id: `debug_subtitle_tests_data_${count++}`,
-                                                label: subs.length !== 0 ? subs.join(', ') : 'none',
+                                                label: subs.length > 0 ? subs.join(', ') : 'none',
                                                 value: models_1.LangDefs.getSubtitle(subs),
+                                            });
+                                        }));
+                                    },
+                                }),
+                            ],
+                        }),
+                    }),
+                    createNavigationButton({
+                        id: 'debug_langaugebuild_tests',
+                        label: 'Langauge Building',
+                        value: '',
+                        form: createForm({
+                            onSubmit: async () => undefined,
+                            validate: async () => true,
+                            sections: async () => [
+                                createSection({
+                                    id: 'debug_langaugebuild_tests_data',
+                                    header: 'Output',
+                                    rows: async () => {
+                                        let count = 0;
+                                        return await Promise.all((0, Utils_1.combos)([
+                                            ...models_1.LangDefs.getSourceCodes(true),
+                                            ...models_1.LangDefs.getSourceCodes(true).map((a) => `-${a}`),
+                                        ]).map(async (lang) => {
+                                            return createMultilineLabel({
+                                                id: `debug_langaugebuild_tests_data_${count++}`,
+                                                label: lang.length > 0 ? lang.join(', ') : 'none',
+                                                value: models_1.Search.create(undefined, {
+                                                    languages: {
+                                                        include: lang.filter((a) => !a.startsWith('-')),
+                                                        exclude: lang
+                                                            .filter((a) => a.startsWith('-'))
+                                                            .map((a) => a.substring(1)),
+                                                    },
+                                                }).text ||
+                                                    // prettier-ignore
+                                                    `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
+                                            });
+                                        }));
+                                    },
+                                }),
+                            ],
+                        }),
+                    }),
+                    createNavigationButton({
+                        id: 'debug_langaugebuildsettings_tests',
+                        label: 'Langauge Building w/default',
+                        value: '',
+                        form: createForm({
+                            onSubmit: async () => undefined,
+                            validate: async () => true,
+                            sections: async () => [
+                                createSection({
+                                    id: 'debug_langaugebuildsettings_tests_data',
+                                    header: 'Output',
+                                    rows: async () => {
+                                        let count = 0;
+                                        return await Promise.all((0, Utils_1.combos)([
+                                            ...models_1.LangDefs.getSourceCodes(true),
+                                            ...models_1.LangDefs.getSourceCodes(true).map((a) => `-${a}`),
+                                        ]).map(async (lang) => {
+                                            return createMultilineLabel({
+                                                id: `debug_langaugebuildsettings_tests_data_${count++}`,
+                                                label: lang.length > 0 ? lang.join(', ') : 'none',
+                                                value: 
+                                                // prettier-ignore
+                                                (await models_1.Search.createWithSettings(states, undefined, {
+                                                    languages: {
+                                                        include: lang.filter((a) => !a.startsWith('-')),
+                                                        exclude: lang
+                                                            .filter((a) => a.startsWith('-'))
+                                                            .map((a) => a.substring(1)),
+                                                    },
+                                                    suffix: '',
+                                                })).text ||
+                                                    // prettier-ignore
+                                                    `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                             });
                                         }));
                                     },
@@ -779,6 +952,11 @@ const debugView = (states) => createNavigationButton({
                         id: 'debug_pkg_ua',
                         label: 'User Agent Data',
                         value: models_1.UserAgent,
+                    }),
+                    createMultilineLabel({
+                        id: 'debug_pkg_empty_search',
+                        label: 'Empty Search',
+                        value: models_1.EmptySearch,
                     }),
                     createNavigationButton({
                         id: 'debug_pkg_url',
@@ -886,7 +1064,7 @@ const debugView = (states) => createNavigationButton({
                                             return createMultilineLabel({
                                                 id: `debug_pkg_debug_data_search${idx++}`,
                                                 label: `${idx}`,
-                                                value: `Input: ${search.input}\nLanguage: ${search.language}\nSort: ${search.sort}`,
+                                                value: `Input: ${search.input}\nLanguages: ${JSON.stringify(search.languages)}\nSorting: ${search.sorting}\nSuffix: ${search.suffix}`,
                                             });
                                         });
                                     },
@@ -1001,7 +1179,7 @@ const combos = (arr, minLength = 0) => {
     // Wtf even is this... but it works.
     // https://stackoverflow.com/a/42531964
     const combinations = new Array(1 << arr.length).fill(undefined).map((_, i) => arr.filter((_, j) => i & (1 << j)));
-    return combinations.filter(a => a.length >= minLength);
+    return combinations.filter((a) => a.length >= minLength);
 };
 exports.combos = combos;
 /**
@@ -1027,16 +1205,32 @@ exports.checkCloudflare = checkCloudflare;
 },{}],52:[function(require,module,exports){
 module.exports={
     "search": [
+        {},
         { "input": "123" },
-        { "input": "123", "sort": "date" },
-        { "input": "123", "language": "japanese" },
-        { "input": "123", "sort": "popular-week", "language": "chinese" },
+        { "input": "123", "sorting": "date" },
+        { "input": "123", "languages": ["japanese"] },
+        { "input": "123", "sorting": "popular-week", "languages": ["chinese"] },
         { "input": "test" },
-        { "input": "test", "sort": "date" },
-        { "input": "test", "language": "japanese" },
-        { "input": "test", "sort": "popular-week", "language": "chinese" },
-        { "input": "Broken", "sort": "badsort", "language": "badlang" },
-        { "input": "Smartquotes “”‘’", "sort": "popular-today" }
+        { "input": "test", "sorting": "date" },
+        { "input": "test", "languages": ["japanese"] },
+        { "input": "test", "sorting": "popular-week", "languages": ["chinese"] },
+        { "input": "test", "suffix": "-yaoi" },
+        { "input": "test", "sorting": "date", "suffix": "-yaoi" },
+        { "input": "test", "languages": ["japanese"], "suffix": "-yaoi" },
+        { "input": "test", "sorting": "popular-week", "languages": ["chinese"], "suffix": "-yaoi" },
+        { "input": "test", "languages": ["_all"] },
+        { "input": "test", "sorting": "date", "languages": { "exclude": ["english"] } },
+        { "input": "test", "languages": { "include": ["japanese"], "exclude": ["chinese"] } },
+        { "input": "test", "sorting": "popular-week", "languages": { "include": ["chinese"], "exclude": ["japanese"] } },
+        { "input": "test", "suffix": "-yaoi", "languages": ["_all"] },
+        { "input": "test", "sorting": "date", "languages": { "exclude": ["english"] }, "suffix": "-yaoi" },
+        { "input": "test", "languages": { "include": ["japanese"], "exclude": ["chinese"] }, "suffix": "-yaoi" },
+        { "input": "test", "sorting": "popular-week", "suffix": "-yaoi", "languages": { "include": ["chinese"], "exclude": ["japanese"] } },
+        { "input": "test", "languages": { "include": ["english", "japanese", "chinese"] } },
+        { "input": "test", "languages": { "include": ["english", "japanese"], "exclude": ["chinese"] } },
+        { "input": "test", "languages": { "include": ["english"], "exclude": ["japanese", "chinese"] } },
+        { "input": "Broken", "sorting": "badsort", "languages": ["badlang"] },
+        { "input": "Smartquotes “”‘’", "sorting": "popular-today" }
     ],
     "replacements": {
         "query": "+test",
@@ -1053,6 +1247,7 @@ module.exports={
 },{}],53:[function(require,module,exports){
 module.exports={
     "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+    "empty_search": "pages:>0",
     "urls": {
         "api": "https://nhentai.net",
         "thumbnails": "https://t.nhentai.net",
@@ -1381,8 +1576,11 @@ class LanguageDefinitions {
     getSourceCodes(sort = false) {
         return (sort ? this.sorted : this.data).map((lang) => lang.source);
     }
+    find(source) {
+        return this.data.find((lang) => lang.source == source)?.source;
+    }
     getDefinition(source, sort = false) {
-        return (sort ? this.sorted : this.data).find(lang => lang.source == source);
+        return (sort ? this.sorted : this.data).find((lang) => lang.source == source);
     }
     // name -> Unknown '<source>'
     getName(source) {
@@ -1423,8 +1621,15 @@ class LanguageDefinitions {
     getTagId(source) {
         return this.getDefinition(source)?.tag ?? -1;
     }
-    getFilteredSources(sources, sort = false) {
-        return this.getSourceCodes(sort).filter(source => sources.includes(source));
+    getFilteredSources(sources, sort = false, includeAll = true) {
+        const filtered = this.getSourceCodes(sort).filter((source) => sources.includes(source));
+        return includeAll ? filtered : filtered.filter((lang) => !lang.startsWith('_'));
+    }
+    stringify(sources, exclude = false) {
+        return this.getFilteredSources(sources, true)
+            .filter((lang) => !lang.startsWith('_'))
+            .map((lang) => `${exclude ? '-' : ''}language:${lang}`)
+            .join(' ');
     }
     getSorted(sources) {
         return (0, Utils_1.orderedSortWith)(sources, (source) => this.getOrder(source));
@@ -1550,13 +1755,21 @@ exports.Requests = {
 },{"./GalleryParser":59,"./Paths":64}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Search = void 0;
+exports.Search = exports.EmptySearch = void 0;
 const Settings_1 = require("../Settings");
+const SourceData_1 = require("../SourceData");
 const Utils_1 = require("../Utils");
 const BookParser_1 = require("./BookParser");
 const Language_1 = require("./Language");
 const Requests_1 = require("./Requests");
 const Sorting_1 = require("./Sorting");
+/**
+ * Empty queries results in an error, so we get
+ * around this error by searching for something
+ * all books has when empty.
+ * (In this case 'pages:>0')
+ */
+exports.EmptySearch = SourceData_1.Data.nhentai.empty_search;
 // The nhentai api is veery unstable when searching, and fails often
 // so we scrape the site as a fallback when we get expected errors.
 // As a last resort, the page will be outright skipped.
@@ -1587,7 +1800,6 @@ exports.Search = {
             }
             if (data.status === 404) {
                 return {
-                    tiles: [],
                     data: `BookId ${ctx.text} does not exist`,
                     metadata: {
                         shouldStop: true,
@@ -1667,24 +1879,47 @@ exports.Search = {
                 bookId: true,
             };
         }
-        const lang = Language_1.LangDefs.getSourceCodes().find(lang => lang === options?.language) ?? '_';
-        const end = options?.suffix ?? '';
-        const suffix = `${!lang.startsWith('_') ? `language:${lang}` : ''} ${end}`.trim();
+        const langs = options?.languages;
+        // include = options.langauages | ...languages.include
+        const includedLangs = (Array.isArray(langs) ? langs : langs?.include) ?? [];
+        // exclude = options.languages.exclude
+        // exclude -= include
+        // exclude -= $item.startsWith('_')
+        const excludedLangs = (!Array.isArray(langs) ? langs?.exclude ?? [] : []).filter((lang) => !lang.startsWith('_') && !includedLangs.includes(lang)) ?? [];
+        const includeAll = includedLangs.find((lang) => lang.startsWith('_')) != undefined;
+        const suffix = options?.suffix ?? '';
+        const sorting = Sorting_1.SortDefs.find(options?.sorting);
+        const includeLangStr = `${Language_1.LangDefs.stringify(includedLangs, false)}`;
+        const excludeLangStr = `${Language_1.LangDefs.stringify(excludedLangs, true)}`;
+        const langStr = !includeAll ? `${includeLangStr} ${excludeLangStr}`.trim() : '';
+        const extras = `${langStr} ${suffix}`.trim();
         return {
-            text: (0, Utils_1.dumbify)(text != undefined ? `${text} ${suffix}` : suffix),
-            sorting: Sorting_1.SortDefs.getSourceCodes().find(sort => sort === options?.sorting),
+            text: (0, Utils_1.dumbify)(text != undefined ? `${text} ${extras}`.trim() : extras) || exports.EmptySearch,
+            sorting,
         };
     },
     createWithSettings: async (states, text, options) => {
+        let langs = options?.languages;
+        if (!Array.isArray(langs)) {
+            // Ensure defined & remove possible references
+            langs = { ...langs };
+            if ((langs.exclude == undefined || Language_1.LangDefs.getFilteredSources(langs.exclude, false, false).length <= 0) &&
+                (langs.include == undefined || Language_1.LangDefs.getFilteredSources(langs.include).length <= 0)) {
+                langs.include = [...(langs.include ?? []), await (0, Settings_1.getLanguage)(states)];
+            }
+        }
+        else if (Language_1.LangDefs.getFilteredSources(langs).length <= 0) {
+            langs = [await (0, Settings_1.getLanguage)(states)];
+        }
         return exports.Search.create(text, {
             suffix: options?.suffix ?? (await (0, Settings_1.getSearchSuffix)(states)),
-            language: options?.language ?? (await (0, Settings_1.getLanguage)(states)),
+            languages: langs,
             sorting: options?.sorting ?? (await (0, Settings_1.getSorting)(states)),
         });
     },
 };
 
-},{"../Settings":49,"../Utils":51,"./BookParser":55,"./Language":62,"./Requests":65,"./Sorting":67}],67:[function(require,module,exports){
+},{"../Settings":49,"../SourceData":50,"../Utils":51,"./BookParser":55,"./Language":62,"./Requests":65,"./Sorting":67}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SortDefs = exports.SortingDefinitions = void 0;
@@ -1697,6 +1932,9 @@ class SortingDefinitions {
     }
     getSourceCodes(sort = false) {
         return (sort ? this.sorted : this.data).map((sort) => sort.source);
+    }
+    find(source) {
+        return this.data.find(sort => sort.source == source)?.source;
     }
     getName(source) {
         return this.data.find((sort) => sort.source == source)?.name ?? `Unknown '${source}'`;
