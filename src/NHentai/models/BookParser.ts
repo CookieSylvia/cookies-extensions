@@ -33,14 +33,14 @@ const getArtist = (book: Book): string => {
 
 // nhentai supports multiple languages.
 // We prioritize the order defined in language definitions.
-const getLanguage = (book: Book): string => {
+const getLanguage = (book: Book): string[] => {
     const languages: string[] = []
     for (const tag of book.tags) {
         if (tag.type === BookTagType.Language && tag.name !== 'translated') {
             languages.push(tag.name)
         }
     }
-    return LangDefs.getSourceCodes(true).find((source) => languages.includes(source)) ?? ''
+    return LangDefs.getFilteredSources(languages)
 }
 
 export const BookParser: BookParserModel = {
@@ -70,7 +70,7 @@ export const BookParser: BookParserModel = {
             id: book.bookId.toString(),
             image: Paths.galleryCover(book.mediaId, book.images.cover.type as string),
             subtitleText: createIconText({
-                text: LangDefs.getName(getLanguage(book)),
+                text: LangDefs.getSubtitle(getLanguage(book)),
             }),
             title: createIconText({
                 text: book.titles.pretty,
@@ -82,7 +82,7 @@ export const BookParser: BookParserModel = {
             id: tile.bookId,
             image: tile.thumbnail,
             subtitleText: createIconText({
-                text: tile.language != undefined ? `${LangDefs.getName(tile.language)}?` : 'Fallback',
+                text: tile.languages.length > 0 ? `${LangDefs.getSubtitle(tile.languages)}?` : 'Fallback',
             }),
             title: createIconText({
                 text: tile.title,
@@ -95,7 +95,7 @@ export const BookParser: BookParserModel = {
             mangaId: mangaId,
             chapNum: 1,
             name: book.titles.english,
-            langCode: LangDefs.getInternalCode(getLanguage(book)),
+            langCode: LangDefs.getPriorityLangCode(getLanguage(book)),
             time: new Date(book.uploaded),
         }),
 

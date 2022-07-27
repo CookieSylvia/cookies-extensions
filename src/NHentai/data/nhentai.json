@@ -43,6 +43,7 @@
   "languages": [
     {
       "name": "Include All",
+      "short": "??",
       "localized": "Include All",
       "source": "_all",
       "internal": "_unknown",
@@ -50,26 +51,29 @@
     },
     {
       "name": "English",
+      "short": "EN",
       "localized": "English",
       "source": "english",
-      "internal": "en",
+      "internal": "gb",
       "tag": 12227,
       "default": true,
       "order": 1
     },
     {
       "name": "Japanese",
+      "short": "JA",
       "localized": "日本語",
       "source": "japanese",
-      "internal": "ja",
+      "internal": "jp",
       "tag": 6346,
       "order": 2
     },
     {
       "name": "Chinese (Simplified)",
+      "short": "ZH",
       "localized": "中文 (简化字)",
       "source": "chinese",
-      "internal": "zh",
+      "internal": "cn",
       "tag": 29963,
       "order": 3
     }

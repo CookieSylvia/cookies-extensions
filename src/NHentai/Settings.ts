@@ -10,6 +10,7 @@ import {
 } from './models'
 import { Data } from './SourceData'
 import {
+    combos,
     dumbify,
     format, 
 } from './Utils'
@@ -229,6 +230,33 @@ export const debugView = (states: SourceStateManager) =>
                                 ],
                             }),
                         }),
+                        createNavigationButton({
+                            id: 'debug_subtitle_tests',
+                            label: 'Subtitle Tests',
+                            value: '',
+                            form: createForm({
+                                onSubmit: async () => undefined,
+                                validate: async () => true,
+                                sections: async () => [
+                                    createSection({
+                                        id: 'debug_subtitle_tests_data',
+                                        header: 'Output',
+                                        rows: async () => {
+                                            let count = 0
+                                            return await Promise.all(
+                                                combos(LangDefs.getSourceCodes(true)).map(async (subs) => {
+                                                    return createMultilineLabel({
+                                                        id: `debug_subtitle_tests_data_${count++}`,
+                                                        label: subs.length !== 0 ? subs.join(', ') : 'none',
+                                                        value: LangDefs.getSubtitle(subs),
+                                                    })
+                                                }),
+                                            )
+                                        },
+                                    }),
+                                ],
+                            }),
+                        }),
                     ],
                 }),
                 createSection({
@@ -418,4 +446,3 @@ export const debugView = (states: SourceStateManager) =>
             ],
         }),
     })
-

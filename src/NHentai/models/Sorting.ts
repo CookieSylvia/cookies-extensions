@@ -1,4 +1,5 @@
 import { Data } from '../SourceData'
+import { orderedSort } from '../Utils'
 
 export interface Sorting {
     name: string
@@ -9,17 +10,15 @@ export interface Sorting {
 
 export class SortingDefinitions {
     readonly data: Sorting[]
+    readonly sorted: Sorting[]
 
     constructor(data: Sorting[]) {
         this.data = data
+        this.sorted = orderedSort(data)
     }
 
     getSourceCodes(sort = false): string[] {
-        let sorting = this.data
-        if (sort) {
-            sorting = [...sorting].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity))
-        }
-        return sorting.map((sort) => sort.source)
+        return (sort ? this.sorted : this.data).map((sort) => sort.source)
     }
 
     getName(source: string): string {

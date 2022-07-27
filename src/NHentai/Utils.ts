@@ -1,5 +1,3 @@
-import { LanguageCode } from 'paperback-extensions-common'
-
 export const format = (source: string, replacements: Record<string, string>): string => {
     return source.replace(
         /{(\w+)}/g,
@@ -8,19 +6,29 @@ export const format = (source: string, replacements: Record<string, string>): st
     )
 }
 
-export const SimpleIsoMappings: { [code: string]: LanguageCode } = {
-    _unknown: LanguageCode.UNKNOWN,
-    en: LanguageCode.ENGLISH,
-    ja: LanguageCode.JAPANESE,
-    zh: LanguageCode.CHINEESE,
+export type Ordered = {
+    order?: number
 }
 
-export const LangLookup = (code?: string | null): LanguageCode => {
-    if (code == undefined) {
-        return LanguageCode.UNKNOWN
-    }
-    const lower = code.toLowerCase()
-    return SimpleIsoMappings[lower] ?? LanguageCode.UNKNOWN
+export const orderedSort = <T extends Ordered>(sortable: T[]): T[] => {
+    return [...sortable].sort((a, b) => (a?.order ?? Infinity) - (b?.order ?? Infinity))
+}
+
+export const orderedSortWith = <T>(sortable: T[], map: (value: T, index: number, array: T[]) => number): T[] => {
+    const ordered = sortable.map((value, idx, arr) => {
+        return {
+            value: value,
+            order: map(value, idx, arr),
+        }
+    })
+    return orderedSort(ordered).map((order) => order.value)
+}
+
+export const combos = <T>(arr: T[], minLength = 0): T[][] => {
+    // Wtf even is this... but it works.
+    // https://stackoverflow.com/a/42531964
+    const combinations = new Array(1 << arr.length).fill(undefined).map((_, i) => arr.filter((_, j) => i & (1 << j)))
+    return combinations.filter(a => a.length >= minLength)
 }
 
 /**

@@ -98,7 +98,7 @@ export const GalleryParser: GalleryParserModel = {
                 bookId,
                 title,
                 thumbnail,
-                language: tagIds.map((ids) => LangDefs.getSourceFromTag(ids)).find((lang) => lang != undefined),
+                languages: LangDefs.getSourcesFromTags(tagIds, true),
             })
         })
         return tiles
