@@ -21,6 +21,10 @@ export class SortingDefinitions {
         return (sort ? this.sorted : this.data).map((sort) => sort.source)
     }
 
+    find(source: string | undefined): string | undefined {
+        return this.data.find(sort => sort.source == source)?.source
+    }
+
     getName(source: string): string {
         return this.data.find((sort) => sort.source == source)?.name ?? `Unknown '${source}'`
     }

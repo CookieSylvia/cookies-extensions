@@ -28,7 +28,7 @@ export const combos = <T>(arr: T[], minLength = 0): T[][] => {
     // Wtf even is this... but it works.
     // https://stackoverflow.com/a/42531964
     const combinations = new Array(1 << arr.length).fill(undefined).map((_, i) => arr.filter((_, j) => i & (1 << j)))
-    return combinations.filter(a => a.length >= minLength)
+    return combinations.filter((a) => a.length >= minLength)
 }
 
 /**

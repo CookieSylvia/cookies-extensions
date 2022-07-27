@@ -3,6 +3,7 @@ import {
     SourceStateManager, 
 } from 'paperback-extensions-common'
 import {
+    EmptySearch,
     LangDefs,
     Search,
     SortDefs,
@@ -38,6 +39,20 @@ export const getAlwaysFallback = async (states: SourceStateManager): Promise<boo
     return (await retrieveAs(states, 'always_fallback')) ?? false
 }
 
+export const getCollectSearches = async (states: SourceStateManager): Promise<boolean> => {
+    return (await retrieveAs(states, 'collect_searches')) ?? false
+}
+
+export const setLatestSearch = async (states: SourceStateManager, text: string | null): Promise<void> => {
+    if ((await getCollectSearches(states)) || text === null) {
+        await states.store('latest_search', text)
+    }
+}
+
+export const getLatestSearch = async (states: SourceStateManager): Promise<string> => {
+    return (await retrieveAs(states, 'latest_search')) ?? '<none>'
+}
+
 export const reset = async (states: SourceStateManager): Promise<void> => {
     await Promise.all([
         states.store('language', null),
@@ -45,6 +60,8 @@ export const reset = async (states: SourceStateManager): Promise<void> => {
         states.store('search_suffix', null),
         states.store('incognito', null),
         states.store('always_fallback', null),
+        states.store('collect_searches', null),
+        states.store('latest_search', null),
     ])
 }
 
@@ -53,7 +70,6 @@ type ContentValues = {
     sorting: [string]
     search_suffix: string
     incognito: boolean
-    always_fallback: boolean
 }
 
 export const settings = (states: SourceStateManager) =>
@@ -68,7 +84,6 @@ export const settings = (states: SourceStateManager) =>
                     states.store('sorting', values.sorting[0]),
                     states.store('search_suffix', dumbify(values.search_suffix)),
                     states.store('incognito', values.incognito),
-                    states.store('always_fallback', values.always_fallback),
                 ])
             },
             validate: async () => true,
@@ -115,19 +130,13 @@ export const settings = (states: SourceStateManager) =>
                 createSection({
                     id: 'web',
                     header: 'Web Requests',
-                    footer: 'Always fallback is for debugging, and is limited to 1 request per second. (aka. Slow searching)',
                     rows: async () => {
-                        const values = await Promise.all([getIncognito(states), getAlwaysFallback(states)])
+                        const values = await Promise.all([getIncognito(states)])
                         return [
                             createSwitch({
                                 id: 'incognito',
                                 label: 'Incognito',
                                 value: values[0],
-                            }),
-                            createSwitch({
-                                id: 'always_fallback',
-                                label: 'Always fallback',
-                                value: values[1],
                             }),
                         ]
                     },
@@ -146,15 +155,45 @@ export const resetSettings = (states: SourceStateManager) =>
 
 // Debug
 
+type DebugValues = {
+    collect_searches: boolean
+    always_fallback: boolean
+}
+
 export const debugView = (states: SourceStateManager) =>
     createNavigationButton({
         id: 'debug',
         label: 'Debug',
         value: '',
         form: createForm({
-            onSubmit: async () => undefined,
+            onSubmit: async (values: DebugValues) => {
+                await Promise.all([
+                    states.store('collect_searches', values.collect_searches),
+                    states.store('always_fallback', values.always_fallback),
+                ])
+            },
             validate: async (): Promise<boolean> => true,
             sections: async () => [
+                createSection({
+                    id: 'debug_overview',
+                    header: 'Overview',
+                    footer: 'Always fallback is for debugging, and is limited to 1 request per second. (aka. Slow searching)',
+                    rows: async () => {
+                        const values = await Promise.all([getCollectSearches(states), getAlwaysFallback(states)])
+                        return [
+                            createSwitch({
+                                id: 'collect_searches',
+                                label: 'Collect searches',
+                                value: values[0],
+                            }),
+                            createSwitch({
+                                id: 'always_fallback',
+                                label: 'Always fallback',
+                                value: values[1],
+                            }),
+                        ]
+                    },
+                }),
                 createSection({
                     id: 'debug_settings',
                     header: 'Stored Settings',
@@ -165,6 +204,8 @@ export const debugView = (states: SourceStateManager) =>
                             getSearchSuffix(states),
                             getIncognito(states),
                             getAlwaysFallback(states),
+                            getCollectSearches(states),
+                            getLatestSearch(states),
                         ])
                         return [
                             createLabel({
@@ -192,12 +233,31 @@ export const debugView = (states: SourceStateManager) =>
                                 label: 'Always fallback',
                                 value: `${values[4] ? 'yes' : 'no'}`,
                             }),
+                            createLabel({
+                                id: 'debug_settings_collect_searches',
+                                label: 'Collect searches',
+                                value: `${values[5] ? 'yes' : 'no'}`,
+                            }),
+                            createMultilineLabel({
+                                id: 'debug_settings_latest_search',
+                                label: `Latest search${values[5] ? '' : ' (frozen)'}`,
+                                value: `${values[6]}`,
+                            }),
+                            createButton({
+                                id: 'debug_settings_clear_latest_search',
+                                label: 'Clear latest search...',
+                                value: '',
+                                onTap: async () => {
+                                    await setLatestSearch(states, null)
+                                },
+                            }),
                         ]
                     },
                 }),
                 createSection({
                     id: 'debug_search',
                     header: 'Searching',
+                    footer: "Buttons suffixed with 'w/default' includes in-app settings.",
                     rows: async () => [
                         createNavigationButton({
                             id: 'debug_search_tests',
@@ -214,14 +274,39 @@ export const debugView = (states: SourceStateManager) =>
                                             let count = 0
                                             return await Promise.all(
                                                 Data.debug.search.map(async (q) => {
-                                                    const ctx = await Search.createWithSettings(states, q.input, {
-                                                        language: q.language,
-                                                        sorting: q.sort,
-                                                    })
+                                                    const ctx = Search.create(q.input, q)
                                                     return createMultilineLabel({
                                                         id: `debug_search_tests_data_${count++}`,
                                                         label: `BookId: ${ctx.bookId ? 'yes' : 'no'}`,
-                                                        value: `Sort by: ${ctx.sorting}\nText: ${ctx.text}`,
+                                                        value: `Sort by: ${ctx.sorting}\nOutput: ${ctx.text}`,
+                                                    })
+                                                }),
+                                            )
+                                        },
+                                    }),
+                                ],
+                            }),
+                        }),
+                        createNavigationButton({
+                            id: 'debug_searchsettings_tests',
+                            label: 'Search Tests w/default',
+                            value: '',
+                            form: createForm({
+                                onSubmit: async () => undefined,
+                                validate: async () => true,
+                                sections: async () => [
+                                    createSection({
+                                        id: 'debug_searchsettings_tests_data',
+                                        header: 'Output',
+                                        rows: async () => {
+                                            let count = 0
+                                            return await Promise.all(
+                                                Data.debug.search.map(async (q) => {
+                                                    const ctx = await Search.createWithSettings(states, q.input, q)
+                                                    return createMultilineLabel({
+                                                        id: `debug_searchsettings_tests_data_${count++}`,
+                                                        label: `BookId: ${ctx.bookId ? 'yes' : 'no'}`,
+                                                        value: `Sort by: ${ctx.sorting}\nOutput: ${ctx.text}`,
                                                     })
                                                 }),
                                             )
@@ -247,8 +332,90 @@ export const debugView = (states: SourceStateManager) =>
                                                 combos(LangDefs.getSourceCodes(true)).map(async (subs) => {
                                                     return createMultilineLabel({
                                                         id: `debug_subtitle_tests_data_${count++}`,
-                                                        label: subs.length !== 0 ? subs.join(', ') : 'none',
+                                                        label: subs.length > 0 ? subs.join(', ') : 'none',
                                                         value: LangDefs.getSubtitle(subs),
+                                                    })
+                                                }),
+                                            )
+                                        },
+                                    }),
+                                ],
+                            }),
+                        }),
+                        createNavigationButton({
+                            id: 'debug_langaugebuild_tests',
+                            label: 'Langauge Building',
+                            value: '',
+                            form: createForm({
+                                onSubmit: async () => undefined,
+                                validate: async () => true,
+                                sections: async () => [
+                                    createSection({
+                                        id: 'debug_langaugebuild_tests_data',
+                                        header: 'Output',
+                                        rows: async () => {
+                                            let count = 0
+                                            return await Promise.all(
+                                                combos([
+                                                    ...LangDefs.getSourceCodes(true),
+                                                    ...LangDefs.getSourceCodes(true).map((a) => `-${a}`),
+                                                ]).map(async (lang) => {
+                                                    return createMultilineLabel({
+                                                        id: `debug_langaugebuild_tests_data_${count++}`,
+                                                        label: lang.length > 0 ? lang.join(', ') : 'none',
+                                                        value:
+                                                            Search.create(undefined, {
+                                                                languages: {
+                                                                    include: lang.filter((a) => !a.startsWith('-')),
+                                                                    exclude: lang
+                                                                        .filter((a) => a.startsWith('-'))
+                                                                        .map((a) => a.substring(1)),
+                                                                },
+                                                            }).text ||
+                                                            // prettier-ignore
+                                                            `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
+                                                    })
+                                                }),
+                                            )
+                                        },
+                                    }),
+                                ],
+                            }),
+                        }),
+                        createNavigationButton({
+                            id: 'debug_langaugebuildsettings_tests',
+                            label: 'Langauge Building w/default',
+                            value: '',
+                            form: createForm({
+                                onSubmit: async () => undefined,
+                                validate: async () => true,
+                                sections: async () => [
+                                    createSection({
+                                        id: 'debug_langaugebuildsettings_tests_data',
+                                        header: 'Output',
+                                        rows: async () => {
+                                            let count = 0
+                                            return await Promise.all(
+                                                combos([
+                                                    ...LangDefs.getSourceCodes(true),
+                                                    ...LangDefs.getSourceCodes(true).map((a) => `-${a}`),
+                                                ]).map(async (lang) => {
+                                                    return createMultilineLabel({
+                                                        id: `debug_langaugebuildsettings_tests_data_${count++}`,
+                                                        label: lang.length > 0 ? lang.join(', ') : 'none',
+                                                        value:
+                                                            // prettier-ignore
+                                                            (await Search.createWithSettings(states, undefined, {
+                                                                languages: {
+                                                                    include: lang.filter((a) => !a.startsWith('-')),
+                                                                    exclude: lang
+                                                                        .filter((a) => a.startsWith('-'))
+                                                                        .map((a) => a.substring(1)),
+                                                                },
+                                                                suffix: '',
+                                                            })).text ||
+                                                            // prettier-ignore
+                                                            `${lang.find((a) => a.startsWith('_')) != undefined ? '<Include All>' : '<none>'}`,
                                                     })
                                                 }),
                                             )
@@ -267,6 +434,11 @@ export const debugView = (states: SourceStateManager) =>
                             id: 'debug_pkg_ua',
                             label: 'User Agent Data',
                             value: UserAgent,
+                        }),
+                        createMultilineLabel({
+                            id: 'debug_pkg_empty_search',
+                            label: 'Empty Search',
+                            value: EmptySearch,
                         }),
                         createNavigationButton({
                             id: 'debug_pkg_url',
@@ -386,7 +558,9 @@ export const debugView = (states: SourceStateManager) =>
                                                 return createMultilineLabel({
                                                     id: `debug_pkg_debug_data_search${idx++}`,
                                                     label: `${idx}`,
-                                                    value: `Input: ${search.input}\nLanguage: ${search.language}\nSort: ${search.sort}`,
+                                                    value: `Input: ${search.input}\nLanguages: ${JSON.stringify(
+                                                        search.languages,
+                                                    )}\nSorting: ${search.sorting}\nSuffix: ${search.suffix}`,
                                                 })
                                             })
                                         },

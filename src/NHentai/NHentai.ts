@@ -25,7 +25,7 @@ import {
     Requests,
     Search,
     SearchMetadata,
-    SearchOptions,
+    SearchObjects,
     SortDefs,
     Urls,
     UserAgent,
@@ -34,12 +34,13 @@ import {
     debugView,
     getIncognito,
     resetSettings,
+    setLatestSearch,
     settings, 
 } from './Settings'
 import { checkCloudflare } from './Utils'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '1.0.2',
+    version: '1.1.0',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -60,9 +61,11 @@ export const NHentaiInfo: SourceInfo = {
     ],
 }
 
-// TODO(High): Figure out how to bypass Cloudflare when testing
-// TODO(Low): Support searching for multiple languages (AND operator, Include & Exclude)
-// TODO(Lower): Update settings to change languages to match search functionality
+// TODO(High): Figure out how to bypass Cloudflare during testing.
+// TODO(Low): Update settings to allow changing languages to match search functionality.
+// TODO(Low): Allow toggling homepage sections.
+// TODO(Low): Search could use some changes, especially to how searches are created.
+// TODO(Low): Do something about all those '// prettier-ignore' comments.
 export class NHentai extends Source {
     private readonly interceptor: RequestInterceptor = {
         interceptRequest: async (request: Request): Promise<Request> => {
@@ -97,7 +100,11 @@ export class NHentai extends Source {
         return createSection({
             id: 'main',
             header: 'Source Settings',
-            rows: async () => [settings(this.stateManager), debugView(this.stateManager), resetSettings(this.stateManager)],
+            rows: async () => [
+                settings(this.stateManager),
+                debugView(this.stateManager),
+                resetSettings(this.stateManager),
+            ],
         })
     }
 
@@ -117,11 +124,17 @@ export class NHentai extends Source {
         })
 
         sections.language = createTagSection({
-            id: 'language',
-            label: 'Language (Select one)',
+            id: 'languages',
+            label: 'Languages',
             tags: LangDefs.getSourceCodes(true).map((source) =>
                 createTag({ id: source, label: LangDefs.getLocalizedName(source) }),
             ),
+        })
+
+        sections.other = createTagSection({
+            id: 'other',
+            label: 'Other',
+            tags: [createTag({ id: 'without_suffix', label: 'Without Suffix' })],
         })
 
         return Object.values(sections)
@@ -132,7 +145,7 @@ export class NHentai extends Source {
     }
 
     override async supportsTagExclusion(): Promise<boolean> {
-        return false
+        return true
     }
 
     override async getMangaDetails(mangaId: string): Promise<SourceManga | Manga> {
@@ -155,10 +168,15 @@ export class NHentai extends Source {
 
     override async getSearchResults(query: SearchRequest, metadata: SearchMetadata): Promise<PagedResults> {
         const ctx = await Search.createWithSettings(this.stateManager, query.title, {
-            language: this.resolveLangauge(query.includedTags),
+            languages: {
+                include: this.resolveLangauges(query.includedTags),
+                exclude: this.resolveLangauges(query.excludedTags),
+            },
             sorting: this.resolveSorting(query.includedTags),
+            suffix: this.resolvesTag(query.includedTags, 'without_suffix') ? '' : undefined,
         })
-        const results = await Search.search(ctx, this.getSearchOptions(), metadata)
+        await setLatestSearch(this.stateManager, ctx.text)
+        const results = await Search.search(ctx, this.getSearchObjects(), metadata)
 
         return createPagedResults({
             results: results.tiles ?? [],
@@ -180,7 +198,7 @@ export class NHentai extends Source {
 
         for (const section of sections) {
             const ctx = await Search.createWithSettings(this.stateManager, undefined, { sorting: section.id })
-            const results = await Search.search(ctx, this.getSearchOptions(), {})
+            const results = await Search.search(ctx, this.getSearchObjects(), {})
 
             section.items = results.tiles
             sectionCallback(section)
@@ -189,7 +207,7 @@ export class NHentai extends Source {
 
     override async getViewMoreItems(homepageSectionId: string, metadata: SearchMetadata): Promise<PagedResults> {
         const ctx = await Search.createWithSettings(this.stateManager, undefined, { sorting: homepageSectionId })
-        const results = await Search.search(ctx, this.getSearchOptions(), metadata)
+        const results = await Search.search(ctx, this.getSearchObjects(), metadata)
 
         return createPagedResults({
             results: results.tiles ?? [],
@@ -208,7 +226,7 @@ export class NHentai extends Source {
         })
     }
 
-    getSearchOptions(): SearchOptions {
+    getSearchObjects(): SearchObjects {
         return {
             requests: this.requestManager,
             states: this.stateManager,
@@ -225,11 +243,15 @@ export class NHentai extends Source {
         return data.parsed
     }
 
-    private resolveLangauge(includedTags?: Tag[]): string | undefined {
-        return includedTags?.find((tag) => LangDefs.data.map((def) => def.source).includes(tag.id))?.id
+    private resolveLangauges(tags?: Tag[]): string[] {
+        return LangDefs.getFilteredSources(tags?.map(tag => tag.id) ?? [])
     }
 
     private resolveSorting(includedTags?: Tag[]): string | undefined {
         return includedTags?.find((tag) => SortDefs.data.map((def) => def.source).includes(tag.id))?.id
+    }
+
+    private resolvesTag(includedTags: Tag[] | undefined, id: string): boolean {
+        return includedTags?.find(tag => tag.id === id) != undefined
     }
 }

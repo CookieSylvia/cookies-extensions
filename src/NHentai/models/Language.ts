@@ -37,8 +37,12 @@ export class LanguageDefinitions {
         return (sort ? this.sorted : this.data).map((lang) => lang.source)
     }
 
+    find(source: string | undefined): string | undefined {
+        return this.data.find((lang) => lang.source == source)?.source
+    }
+
     getDefinition(source: string, sort = false): Language | undefined {
-        return (sort ? this.sorted : this.data).find(lang => lang.source == source)
+        return (sort ? this.sorted : this.data).find((lang) => lang.source == source)
     }
 
     // name -> Unknown '<source>'
@@ -87,8 +91,16 @@ export class LanguageDefinitions {
         return this.getDefinition(source)?.tag ?? -1
     }
 
-    getFilteredSources(sources: string[], sort = false): string[] {
-        return this.getSourceCodes(sort).filter(source => sources.includes(source))
+    getFilteredSources(sources: string[], sort = false, includeAll = true): string[] {
+        const filtered = this.getSourceCodes(sort).filter((source) => sources.includes(source))
+        return includeAll ? filtered : filtered.filter((lang) => !lang.startsWith('_'))
+    }
+
+    stringify(sources: string[], exclude = false): string {
+        return this.getFilteredSources(sources, true)
+            .filter((lang) => !lang.startsWith('_'))
+            .map((lang) => `${exclude ? '-' : ''}language:${lang}`)
+            .join(' ')
     }
 
     getSorted(sources: string[]): string[] {
