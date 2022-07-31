@@ -1,17 +1,14 @@
-import { Book } from './Book'
-import { Books } from './Books'
-import { BookTitles } from './BookTitles'
-import { Images } from './Images'
-import { LangDefs } from './Language'
-import { Tile } from './Tile'
 import {
+    Book,
+    Booklet,
+    Books,
     BookTag,
-    BookTagType, 
-} from './BookTag'
-import {
+    BookTagType,
+    BookTitles,
     Image,
+    Images,
     ImageType, 
-} from './Image'
+} from './BookTypes'
 import {
     Galleries,
     Gallery,
@@ -19,17 +16,8 @@ import {
     GalleryImages,
     GalleryTag,
     GalleryTitles, 
-} from './nhentai'
-
-export interface GalleryParserModel {
-    image: (image: GalleryImage) => Image
-    images: (images: GalleryImages) => Images
-    titles: (titles: GalleryTitles) => BookTitles
-    tag: (tag: GalleryTag) => BookTag
-    tiles: ($: CheerioStatic) => Tile[]
-    book: (gallery: Gallery) => Book
-    books: (galleries: Galleries) => Books
-}
+} from './GalleryTypes'
+import { LangDefs } from './Languages'
 
 const getType = (type: 'j' | 'p' | 'g'): ImageType => {
     switch (type) {
@@ -40,10 +28,16 @@ const getType = (type: 'j' | 'p' | 'g'): ImageType => {
         case 'g':
             return ImageType.GIF
     }
-    throw new Error(`Unable to parse type '${type}'`)
+    // Unreachable, but is there just in case.
+    throw new Error(`Unable to parse image type '${type}'`)
 }
 
-export const GalleryParser: GalleryParserModel = {
+export const GalleryParser = {
+    /**
+     * Parses a {@link GalleryImage} into a {@link Image}.
+     * @param image The provided {@link GalleryImage}.
+     * @returns The parsed image.
+     */
     image: (image: GalleryImage): Image => {
         return {
             type: getType(image.t),
@@ -52,6 +46,11 @@ export const GalleryParser: GalleryParserModel = {
         }
     },
 
+    /**
+     * Parses {@link GalleryImages} into {@link Images}.
+     * @param images The provided {@link GalleryImages}.
+     * @returns The parsed images.
+     */
     images: (images: GalleryImages): Images => {
         return {
             cover: GalleryParser.image(images.cover),
@@ -60,6 +59,11 @@ export const GalleryParser: GalleryParserModel = {
         }
     },
 
+    /**
+     * Parses {@link GalleryTitles} into {@link BookTitles}.
+     * @param titles The provided {@link GalleryTitles}.
+     * @returns The parsed titles.
+     */
     titles: (titles: GalleryTitles): BookTitles => {
         const priority = [titles.english, titles.japanese, titles.pretty].filter((title) => title != null) as string[]
         // tranformation:
@@ -72,6 +76,11 @@ export const GalleryParser: GalleryParserModel = {
         }
     },
 
+    /**
+     * Parses a {@link GalleryTag} into a {@link BookTag}
+     * @param tag The provided {@link GalleryTag}.
+     * @returns The parsed tag.
+     */
     tag: (tag: GalleryTag): BookTag => {
         return {
             id: tag.id,
@@ -81,29 +90,43 @@ export const GalleryParser: GalleryParserModel = {
         }
     },
 
-    tiles: ($: CheerioStatic): Tile[] => {
-        const tiles: Tile[] = []
+    /**
+     * Parses the loaded data into {@link Booklet Booklets}.
+     * @param $ The loaded cheerio instance.
+     * @returns The parsed booklets.
+     */
+    booklets: ($: CheerioStatic): Booklet[] => {
+        const booklets: Booklet[] = []
         $('.gallery').each((idx, self) => {
+            // $ a[href]
             const link = $(self).find('a').attr('href')
             const bookId = /(\d+)/.exec(link ?? '')?.[0]
+            // $ .caption
             const title = $(self).find('.caption').text()
+            // $ img[data-src]
             const thumbnail = $(self).find('img').attr('data-src')
 
             if (bookId == undefined || title == undefined || thumbnail == undefined) {
-                console.log(`Unable to cheerio tile ${idx}: ${$(self).html()}`)
+                console.log(`Unable to cheerio booklet ${idx}: ${$(self).html()}`)
                 return
             }
+            // $ [data-tags]
             const tagIds = ($(self).attr('data-tags') ?? '').split(' ')
-            tiles.push({
+            booklets.push({
                 bookId,
                 title,
                 thumbnail,
                 languages: LangDefs.getSourcesFromTags(tagIds, true),
             })
         })
-        return tiles
+        return booklets
     },
 
+    /**
+     * Parses a {@link Gallery} into a {@link Book}.
+     * @param gallery The provided {@link Gallery}.
+     * @returns The parsed book.
+     */
     book: (gallery: Gallery): Book => {
         return {
             bookId: gallery.id,
@@ -112,17 +135,23 @@ export const GalleryParser: GalleryParserModel = {
             images: GalleryParser.images(gallery.images),
             scanlator: gallery.scanlator,
             tags: gallery.tags.map((tag) => GalleryParser.tag(tag)),
+            // Tranform seconds into milliseconds.
             uploaded: gallery.upload_date * 1000,
             pages: gallery.num_pages,
             favorites: gallery.num_favorites,
         }
     },
 
+    /**
+     * Parses {@link Galleries} into {@link Books}.
+     * @param galleries The provided {@link Galleries}.
+     * @returns The parsed books.
+     */
     books: (galleries: Galleries): Books => {
         return {
             books: galleries.result.map((gallery) => GalleryParser.book(gallery)),
             pages: galleries.num_pages,
-            per_page: galleries.per_page,
+            perPage: galleries.per_page,
         }
     },
 }

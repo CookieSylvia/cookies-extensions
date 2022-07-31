@@ -1,90 +1,133 @@
+import { RequestManager } from 'paperback-extensions-common'
+import { Data } from '../Data'
 import {
-    RequestManager,
-    Response, 
-} from 'paperback-extensions-common'
-import { Book } from './Book'
-import { Books } from './Books'
+    Book,
+    Booklet,
+    Books, 
+} from './BookTypes'
 import { GalleryParser } from './GalleryParser'
-import { Parsed } from './Parsed'
-import { Paths } from './Paths'
-import { Tile } from './Tile'
+import { Paths } from './Urls'
 
-export interface RequestsModel {
-    search: (
-        requests: RequestManager,
-        query: string,
-        page?: number | string,
-        sort?: string,
-    ) => Promise<Parsed<Response, Books>>
-    searchFallback: (
-        requests: RequestManager,
-        cheerio: CheerioAPI,
-        query: string,
-        page?: number | string,
-        sort?: string,
-    ) => Promise<Parsed<Response, Tile[]>>
-    book: (requests: RequestManager, bookId: number | string) => Promise<Parsed<Response, Book>>
+export const UserAgent = Data.nhentai.user_agent
+
+/**
+ * A response with the parsed result.
+ */
+export type Parsed<P> = {
+    /**
+     * The response which was provided from the server
+     */
+    data: string
+    /**
+     * The HTTP status code from the server response
+     */
+    status: number
+    /**
+     * The parsed object, if undefined then the request failed.
+     */
+    parsed?: P
 }
 
-const isStatusSuccess = (status: number) => status <= 299 && status >= 200
+const isStatusSuccess = (status: number) => status >= 200 && status <= 299
 
-export const Requests: RequestsModel = {
+export const Requests = {
+    /**
+     * Sends a search request using all provided parameters.
+     * Returns a response with {@link Books} if successful.
+     * @param requests The {@link RequestManager}.
+     * @param query The search query.
+     * @param page The search page.
+     * @param sort The search sort.
+     * @returns A parsed response with {@link Books}.
+     */
     search: async (
         requests: RequestManager,
         query: string,
         page?: number | string,
         sort?: string,
-    ): Promise<Parsed<Response, Books>> => {
+    ): Promise<Parsed<Books>> => {
         const request = createRequestObject({
             url: Paths.search(query, page, sort),
             method: 'GET',
         })
+        // Destructing this doesn't seem to work correctly... for some reason.
         const response = await requests.schedule(request, 1)
 
         if (isStatusSuccess(response.status)) {
             return {
-                ...response,
+                data: response.data,
+                status: response.status,
                 parsed: GalleryParser.books(JSON.parse(response.data)),
             }
         }
-        return response
+        return {
+            data: response.data,
+            status: response.status,
+        }
     },
 
+    /**
+     * Sends a fallback ssearch request using all provided parameters, parsing using cheerio.
+     * Returns a response with {@link Books} if successful.
+     * @param requests The (fallback) {@link RequestManager}.
+     * @param cheerio The {@link CheerioAPI Cheerio API}.
+     * @param query The search query.
+     * @param page  The search page.
+     * @param sort The search sort.
+     * @returns A parsed response with {@link Books}.
+     */
     searchFallback: async (
         requests: RequestManager,
         cheerio: CheerioAPI,
         query: string,
         page?: number | string,
         sort?: string,
-    ): Promise<Parsed<Response, Tile[]>> => {
+    ): Promise<Parsed<Booklet[]>> => {
         const request = createRequestObject({
             url: Paths.searchFallback(query, page, sort),
             method: 'GET',
         })
+        // Destructing this doesn't seem to work correctly... for some reason.
         const response = await requests.schedule(request, 1)
 
         if (isStatusSuccess(response.status)) {
             return {
-                ...response,
-                parsed: GalleryParser.tiles(cheerio.load(response.data)),
+                data: response.data,
+                status: response.status,
+                parsed: GalleryParser.booklets(cheerio.load(response.data)),
             }
         }
-        return response
+        return {
+            data: response.data,
+            status: response.status,
+        }
     },
 
-    book: async (requests: RequestManager, bookId: number | string): Promise<Parsed<Response, Book>> => {
+    /**
+     * Sends a gallery request using all provided parameters.
+     * Returns a response with a {@link Book} if successful.
+     * @param requests The request manager.
+     * @param bookId The bookId.
+     * @returns A parsed response with a {@link Book}.
+     */
+    book: async (requests: RequestManager, bookId: number | string): Promise<Parsed<Book>> => {
         const request = createRequestObject({
             url: Paths.gallery(bookId),
             method: 'GET',
         })
+        // Destructing this doesn't seem to work correctly... for some reason.
         const response = await requests.schedule(request, 1)
 
         if (isStatusSuccess(response.status)) {
             return {
-                ...response,
+                data: response.data,
+                status: response.status,
                 parsed: GalleryParser.book(JSON.parse(response.data)),
             }
         }
-        return response
+        return {
+            data: response.data,
+            status: response.status,
+        }
     },
 }

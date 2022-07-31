@@ -1,6 +1,7 @@
 {
   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
   "empty_search": "pages:>0",
+  "book_regex": "^\\s*#?\\s*(\\d+)\\s*$",
   "urls": {
     "api": "https://nhentai.net",
     "thumbnails": "https://t.nhentai.net",
@@ -25,27 +26,23 @@
       "url": "api"
     },
     "gallery": {
-      "path": "/api/gallery/{bookId}",
+      "path": "/api/gallery/{book_id}",
       "url": "api"
     },
     "galleryCover": {
-      "path": "/galleries/{mediaId}/cover.{extension}",
+      "path": "/galleries/{media_id}/cover.{extension}",
       "url": "thumbnails"
     },
     "galleryPage": {
-      "path": "/galleries/{mediaId}/{page}.{extension}",
+      "path": "/galleries/{media_id}/{page}.{extension}",
       "url": "images"
-    },
-    "galleryPageThumbnail": {
-      "path": "/galleries/{mediaId}/{page}t.{extension}",
-      "url": "thumbnails"
     }
   },
   "languages": [
     {
-      "name": "Include All",
+      "name": "Include all",
       "short": "??",
-      "localized": "Include All",
+      "localized": "Include all",
       "source": "_all",
       "internal": "_unknown",
       "order": 0
