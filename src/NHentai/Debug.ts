@@ -10,8 +10,8 @@ import { SearchHistoryEntry } from './Settings'
 const dedent = (str: string, preserveEmpty = false) => str.replace(preserveEmpty ? /\n[^\S\r\n]*/g : /\n\s*/g, '\n')
 
 export const stringifyLanguage = (language: Language): string => {
-    return dedent(
-        `
+    // prettier-ignore
+    return dedent(`
     Name: ${language.name}
     Short: ${language.short}
     Localized: ${language.localized}
@@ -19,39 +19,36 @@ export const stringifyLanguage = (language: Language): string => {
     TagId: ${language.tag ?? 'none'}
     Order: ${language.order ?? Infinity}
     Default: ${yesno(language.default ?? false)}
-    `.trim(),
-    )
+    `.trim())
 }
 
 export const stringifySorting = (sorting: Sorting): string => {
-    return dedent(
-        `
+    // prettier-ignore
+    return dedent(`
     Name: ${sorting.name}
     Source: ${sorting.source}
     Order: ${sorting.order ?? Infinity}
     Default: ${yesno(sorting.default ?? false)}
-    `.trim(),
-    )
+    `.trim())
 }
 
 export const stringifySearchOptions = (options?: SearchOptions & { text?: string }): string => {
     const langCtx = Search.createLanguageContext(options?.languages)
     const incl = langCtx.include
     const excl = langCtx.exclude
-    return dedent(
-        `
+    // prettier-ignore
+    return dedent(`
     Text: ${options?.text ?? '<none>'}
     Sort: ${options?.sort ?? '<none>'}
     Suffix: ${options?.suffix ?? '<none>'}
     Included Languages: [${incl.join(', ')}]
     Excluded Languages: [${excl.join(', ')}]
-    `.trim(),
-    )
+    `.trim())
 }
 
 export const stringifySearchEntry = (entry: SearchHistoryEntry): string => {
-    return dedent(
-        `
+    // prettier-ignore
+    return dedent(`
     Text: ${entry.text}
     Sort: ${entry.sort ?? 'unknown'}
     Status: ${entry.status ?? 'unknown'}
@@ -62,18 +59,16 @@ export const stringifySearchEntry = (entry: SearchHistoryEntry): string => {
     Fallback: ${yesno(entry.fallback ?? false)}
     Next: ${entry.nextPage ?? 'unknown'}
     Max: ${entry.maxPage ?? 'unknown'}
-    `.trim(),
-    )
+    `.trim())
 }
 
 export const stringifySearchContext = (context: SearchContext): string => {
-    return dedent(
-        `
+    // prettier-ignore
+    return dedent(`
     Text: ${context.text}
     Sort: ${context.sort ?? '<omit>'}
     BookId: ${yesno(context.bookId ?? false)}
-    `.trim(),
-    )
+    `.trim())
 }
 
 /**
