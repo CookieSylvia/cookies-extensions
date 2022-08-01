@@ -403,6 +403,7 @@ exports.combos = exports.yesno = exports.showFrozen = exports.stringifySearchCon
 const models_1 = require("./models");
 const dedent = (str, preserveEmpty = false) => str.replace(preserveEmpty ? /\n[^\S\r\n]*/g : /\n\s*/g, '\n');
 const stringifyLanguage = (language) => {
+    // prettier-ignore
     return dedent(`
     Name: ${language.name}
     Short: ${language.short}
@@ -415,6 +416,7 @@ const stringifyLanguage = (language) => {
 };
 exports.stringifyLanguage = stringifyLanguage;
 const stringifySorting = (sorting) => {
+    // prettier-ignore
     return dedent(`
     Name: ${sorting.name}
     Source: ${sorting.source}
@@ -427,6 +429,7 @@ const stringifySearchOptions = (options) => {
     const langCtx = models_1.Search.createLanguageContext(options?.languages);
     const incl = langCtx.include;
     const excl = langCtx.exclude;
+    // prettier-ignore
     return dedent(`
     Text: ${options?.text ?? '<none>'}
     Sort: ${options?.sort ?? '<none>'}
@@ -437,6 +440,7 @@ const stringifySearchOptions = (options) => {
 };
 exports.stringifySearchOptions = stringifySearchOptions;
 const stringifySearchEntry = (entry) => {
+    // prettier-ignore
     return dedent(`
     Text: ${entry.text}
     Sort: ${entry.sort ?? 'unknown'}
@@ -452,6 +456,7 @@ const stringifySearchEntry = (entry) => {
 };
 exports.stringifySearchEntry = stringifySearchEntry;
 const stringifySearchContext = (context) => {
+    // prettier-ignore
     return dedent(`
     Text: ${context.text}
     Sort: ${context.sort ?? '<omit>'}
