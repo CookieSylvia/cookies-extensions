@@ -19,6 +19,7 @@
   "dependencies": {
     "paperback-cli": "^2.0.0-alpha.13",
     "paperback-extensions-common": "^5.0.0-alpha.7",
+    "rand-user-agent": "^2.0.16",
     "ts-node": "^10.9.1"
   },
   "devDependencies": {

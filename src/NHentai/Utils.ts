@@ -1,3 +1,5 @@
+import { NHentaiInfo } from './NHentai'
+
 /**
  * A simple string formatter, which replaces named {curly_braces}
  * with the given replacements.
@@ -75,10 +77,14 @@ export const dumbify = (smart: string): string => {
  * And if so, give instructions to the user.
  * @param status The status code to check.
  */
-export const checkCloudflare = (status: number) => {
-    if (status == 503) {
-        throw new Error(
-            "CLOUDFLARE BYPASS ERROR:\nPlease go to 'Settings > External Sources > nhentai' and press Cloudflare Bypass",
-        )
+export const checkCloudflare = (challenged: boolean) => {
+    if (challenged) {
+        throw new Error(`Cloudflare Challenge:\nPlease go to the homepage of ${NHentaiInfo.name} and press the cloud icon.`)
     }
+}
+
+import randUA from './lib/randua'
+
+export const generateUA = () => {
+    return randUA('desktop')
 }

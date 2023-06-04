@@ -23,7 +23,7 @@ import {
     LangDefs,
     SortDefs,
     Urls,
-    UserAgent,
+    DefaultUserAgent,
     Parsed,
     SearchObjects,
     Requests,
@@ -37,8 +37,10 @@ import {
     createHistoryEntry,
     getDoubleSearch,
     getIncognito,
+    getUserAgent,
     migrate,
-    resetSettings, 
+    resetSettings,
+    setUserAgent, 
 } from './Settings'
 import {
     debugNavButton,
@@ -47,7 +49,7 @@ import {
 import { checkCloudflare } from './Utils'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '2.0.0',
+    version: '2.1.0',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'ItemCookie',
@@ -78,7 +80,7 @@ export class NHentai extends Source {
         interceptRequest: async (request: Request): Promise<Request> => {
             request.headers = {
                 ...request.headers,
-                'user-agent': UserAgent,
+                'user-agent': await this.getStoredUserAgent(),
                 referer: `${Urls.api}/`,
             }
             request.incognito = await getIncognito(this.stateManager)
@@ -248,8 +250,8 @@ export class NHentai extends Source {
             url: Urls.cloudflare,
             method: 'GET',
             headers: {
-                'user-agent': UserAgent,
-                referer: `${Urls.cloudflare}/`,
+                'user-agent': this.globalUA ?? DefaultUserAgent,
+                referer: `${Urls.api}/`,
             },
         })
     }
@@ -263,8 +265,24 @@ export class NHentai extends Source {
         }
     }
 
+    private globalUA: string | undefined
+
+    async getStoredUserAgent(): Promise<string> {
+        if (this.globalUA != undefined) {
+            return this.globalUA
+        }
+        const stored = await getUserAgent(this.stateManager)
+
+        if (stored == null) {
+            await setUserAgent(this.stateManager, this.globalUA = DefaultUserAgent)
+        } else {
+            this.globalUA = stored
+        }
+        return this.globalUA
+    }
+
     private checkErrors<P>(data: Parsed<P>): P {
-        checkCloudflare(data.status)
+        checkCloudflare(data.challenged)
         if (data.parsed == undefined) {
             throw new Error(`Error ${data.status}: ${data.data}`)
         }

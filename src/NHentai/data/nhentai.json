@@ -1,5 +1,5 @@
 {
-  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+  "default_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
   "empty_search": "pages:>0",
   "book_regex": "^\\s*#?\\s*(\\d+)\\s*$",
   "urls": {

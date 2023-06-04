@@ -102,6 +102,13 @@ export const setAlwaysFallback = async (states: SourceStateManager, alwaysFallba
     await states.store('always_fallback', alwaysFallback)
 }
 
+export const getUserAgent = async (states: SourceStateManager): Promise<string | null> => {
+    return (await retrieveAs(states, 'user_agent'))
+}
+export const setUserAgent = async (states: SourceStateManager, userAgent: string | null): Promise<void> => {
+    await states.store('user_agent', userAgent)
+}
+
 export const getCollectSearches = async (states: SourceStateManager): Promise<boolean> => {
     return (await retrieveAs(states, 'collect_searches')) ?? false
 }
@@ -212,6 +219,7 @@ export const reset = async (states: SourceStateManager): Promise<void> => {
         states.store('collect_searches', null),
         states.store('search_history', null),
         states.store('double_search', null),
+        states.store('user_agent', null),
     ])
 }
 

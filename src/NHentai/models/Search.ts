@@ -296,7 +296,7 @@ export const Search = {
             }
         }
         const data = await Requests.search(objects.requests, ctx.text, page, ctx.sort)
-        checkCloudflare(data.status)
+        checkCloudflare(data.challenged)
 
         if (data.parsed != undefined) {
             const shouldStop = page + 1 > data.parsed.pages
@@ -375,7 +375,7 @@ export const Search = {
             page,
             ctx.sort,
         )
-        checkCloudflare(data.status)
+        checkCloudflare(data.challenged)
 
         if (data.parsed != undefined) {
             return {
@@ -421,7 +421,7 @@ export const Search = {
             throw new Error(`Searching by book id, but '${ctx.text}' is invalid.`)
         }
         const data = await Requests.book(objects.requests, ctx.text)
-        checkCloudflare(data.status)
+        checkCloudflare(data.challenged)
 
         if (data.parsed != undefined) {
             return {

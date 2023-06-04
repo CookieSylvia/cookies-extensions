@@ -1,4 +1,7 @@
-import { RequestManager } from 'paperback-extensions-common'
+import {
+    RequestManager,
+    Response, 
+} from 'paperback-extensions-common'
 import { Data } from '../Data'
 import {
     Book,
@@ -8,7 +11,7 @@ import {
 import { GalleryParser } from './GalleryParser'
 import { Paths } from './Urls'
 
-export const UserAgent = Data.nhentai.user_agent
+export const DefaultUserAgent = Data.nhentai.default_user_agent
 
 /**
  * A response with the parsed result.
@@ -23,12 +26,17 @@ export type Parsed<P> = {
      */
     status: number
     /**
+     * Whether the `cf-mitigated: challenge` header was present.
+     */
+    challenged: boolean
+    /**
      * The parsed object, if undefined then the request failed.
      */
     parsed?: P
 }
 
 const isStatusSuccess = (status: number) => status >= 200 && status <= 299
+const isChallenged = (response: Response) => response.headers?.['cf-mitigated']?.toLowerCase() === 'challenge'
 
 export const Requests = {
     /**
@@ -57,12 +65,14 @@ export const Requests = {
             return {
                 data: response.data,
                 status: response.status,
+                challenged: isChallenged(response),
                 parsed: GalleryParser.books(JSON.parse(response.data)),
             }
         }
         return {
             data: response.data,
             status: response.status,
+            challenged: isChallenged(response),
         }
     },
 
@@ -94,12 +104,14 @@ export const Requests = {
             return {
                 data: response.data,
                 status: response.status,
+                challenged: isChallenged(response),
                 parsed: GalleryParser.booklets(cheerio.load(response.data)),
             }
         }
         return {
             data: response.data,
             status: response.status,
+            challenged: isChallenged(response),
         }
     },
 
@@ -122,12 +134,14 @@ export const Requests = {
             return {
                 data: response.data,
                 status: response.status,
+                challenged: isChallenged(response),
                 parsed: GalleryParser.book(JSON.parse(response.data)),
             }
         }
         return {
             data: response.data,
             status: response.status,
+            challenged: isChallenged(response),
         }
     },
 }

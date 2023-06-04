@@ -1,5 +1,6 @@
 import { SourceStateManager } from 'paperback-extensions-common'
 import {
+    DefaultUserAgent,
     LangDefs,
     SortDefs, 
 } from '../models'
@@ -9,13 +10,18 @@ import {
     getLanguage,
     getSearchSuffix,
     getSorting,
+    getUserAgent,
     setDoubleSearch,
     setIncognito,
     setLanguage,
     setSearchSuffix,
     setSorting,
+    setUserAgent,
 } from '../Settings'
-import { dumbify } from '../Utils'
+import {
+    dumbify,
+    generateUA, 
+} from '../Utils'
 
 export const settingsNavButton = (states: SourceStateManager) =>
     createNavigationButton({
@@ -34,6 +40,7 @@ export type ContentValues = {
 export type WebValues = {
     incognito: boolean
     double_search: boolean
+    user_agent: string
 }
 
 export const settingsForm = (states: SourceStateManager, readonly = false) =>
@@ -45,7 +52,7 @@ export const settingsForm = (states: SourceStateManager, readonly = false) =>
             await Promise.all([settingsSubmit(states, values), webSubmit(states, values)])
         },
         validate: async () => true,
-        sections: async () => [settingsSection(states), webSection(states)],
+        sections: async () => [settingsSection(states), webSection(states, readonly)],
     })
 
 export const settingsSubmit = async (states: SourceStateManager, values: ContentValues) => {
@@ -60,6 +67,7 @@ export const webSubmit = async (states: SourceStateManager, values: WebValues) =
     await Promise.all([
         setIncognito(states, values.incognito),
         setDoubleSearch(states, values.double_search),
+        setUserAgent(states, values.user_agent),
     ])
 }
 
@@ -100,13 +108,23 @@ export const settingsSection = (states: SourceStateManager) =>
         },
     })
 
-export const webSection = (states: SourceStateManager) =>
+export const webSection = (states: SourceStateManager, readonly: boolean) =>
     createSection({
         id: 'web',
         header: 'Web Requests',
-        footer: 'Double search requests two pages per search. Enable this if your searches stops loading after 1 page.',
+        footer: 'Double search requests two pages per search. Enable this if your searches stops loading after 1 page.\nYou need to restart the app after randomizing UserAgent. You might need to try randomizing a few times.',
         rows: async () => {
-            const values = await Promise.all([getIncognito(states), getDoubleSearch(states)])
+            const values = await Promise.all([getIncognito(states), getDoubleSearch(states), getUserAgent(states)])
+            const writing = [
+                createButton({
+                    id: 'randomize_user_agent',
+                    label: 'Randomize UserAgent',
+                    value: undefined,
+                    onTap: async () => {
+                        await setUserAgent(states, generateUA())
+                    },
+                }),
+            ]
             return [
                 createSwitch({
                     id: 'incognito',
@@ -118,6 +136,12 @@ export const webSection = (states: SourceStateManager) =>
                     label: 'Double search (Slower)',
                     value: values[1],
                 }),
+                createMultilineLabel({
+                    id: 'user_agent',
+                    label: 'User Agent' + (values[2] == null ? ' (default)' : ''),
+                    value: values[2] ?? DefaultUserAgent,
+                }),
+                ...(readonly ? [] : writing),
             ]
         },
     })

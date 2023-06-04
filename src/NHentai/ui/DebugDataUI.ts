@@ -8,7 +8,7 @@ import {
     EmptySearch,
     LangDefs,
     SortDefs,
-    UserAgent, 
+    DefaultUserAgent, 
 } from '../models'
 import { createNavSections } from './DebugUI'
 
@@ -19,8 +19,8 @@ export const packagedDataSection = () =>
         rows: async () => [
             createMultilineLabel({
                 id: 'debug_pkg_ua',
-                label: 'User Agent Data',
-                value: UserAgent,
+                label: 'Default User Agent Data',
+                value: DefaultUserAgent,
             }),
             createMultilineLabel({
                 id: 'debug_pkg_empty_search',
