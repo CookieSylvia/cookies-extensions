@@ -8,6 +8,7 @@ import {
   DUISection,
   HomePageSectionsProviding,
   HomeSection,
+  HomeSectionType,
   MangaProviding,
   PagedResults,
   Request,
@@ -26,6 +27,7 @@ import {
   LangDefs,
   Parsed,
   Requests,
+  Search,
   SearchMetadata,
   SearchObjects,
   SortDefs,
@@ -33,14 +35,15 @@ import {
 } from './models';
 import { Tags } from './Data';
 import { checkCloudflare } from './Utils';
+import { Data } from './Data';
 
 export const NHentaiInfo: SourceInfo = {
-  version: '3.0.0',
-  name: 'nhentai',
+  version: Data.info.version,
+  name: Data.info.name,
   icon: 'icon.png',
-  author: 'ItemCookie',
-  authorWebsite: 'https://github.com/ItemCookie',
-  description: 'Extension which pulls 18+ content from nhentai.',
+  author: Data.info.author,
+  authorWebsite: Data.info.website,
+  description: Data.info.description,
   contentRating: ContentRating.ADULT,
   websiteBaseURL: Urls.api,
   intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
@@ -96,14 +99,41 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
 
   async getSearchResults(query: SearchRequest, metadata: SearchMetadata): Promise<PagedResults> {
-    throw new Error('Method not implemented.');
+    const ctx = await Search.createWithSettings(this.stateManager, query.title, {
+      languages: {
+        include: this.resolveLangauges(query.includedTags),
+        exclude: this.resolveLangauges(query.excludedTags),
+      },
+      sort: this.resolveSorting(query.includedTags),
+      suffix: this.resolvesTag(query.includedTags, Tags.withoutSuffix) ? '' : undefined,
+    });
+
+    // TODO: Setting for 1 or 2 pages
+    const results = await Search.searchMany(2, ctx, this.getSearchObjects(), metadata);
+
+    return App.createPagedResults({
+      results: results.partials,
+      metadata: results.metadata,
+    });
   }
 
   async getSearchTags?(): Promise<TagSection[]> {
     const sections: Record<string, TagSection> = {};
 
-    //sections.sorting = App.createTagSection(); 
-    //sections.language = App.createTagSection(); 
+    sections.sorting = App.createTagSection({
+      id: 'sorting',
+      label: 'Sort by (Select one)',
+      tags: SortDefs.getSources(true).map((source) => App.createTag({ id: source, label: SortDefs.getName(source) })),
+    });
+
+    sections.language = App.createTagSection({
+      id: 'languages',
+      label: 'Languages',
+      tags: LangDefs.getSources(true).map((source) => 
+        App.createTag({ id: source, label: LangDefs.getLocalizedName(source) }),
+      ),
+    }); 
+    
     sections.other = App.createTagSection({
       id: 'other',
       label: 'Other',
@@ -149,11 +179,40 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
 
   async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-    throw new Error('Method not implemented.');
+    const sections: HomeSection[] = [];
+    for (const source of SortDefs.getSources(true)) {
+      sections.push(
+        App.createHomeSection({
+          id: source,
+          title: SortDefs.getName(source),
+          type: HomeSectionType.singleRowNormal,
+          containsMoreItems: true,
+        }),
+      );
+    }
+    const searches: Promise<void>[] = [];
+    for (const section of sections) {
+      sectionCallback(section);
+      searches.push(
+        Search.createWithSettings(this.stateManager, undefined, { sort: section.id }).then(async (ctx) => {
+          const results = await Search.search(ctx, this.getSearchObjects(), {});
+          section.items = results.partials ?? [];
+          sectionCallback(section);
+        }),
+      );
+    }
+
+    await Promise.all(searches);
   }
 
   async getViewMoreItems(homepageSectionId: string, metadata: SearchMetadata): Promise<PagedResults> {
-    throw new Error('Method not implemented.');
+    const ctx = await Search.createWithSettings(this.stateManager, undefined, { sort: homepageSectionId });
+    const results = await Search.search(ctx, this.getSearchObjects(), metadata);
+
+    return App.createPagedResults({
+      results: results.partials,
+      metadata: results.metadata,
+    });
   }
 
   async getCloudflareBypassRequestAsync(): Promise<Request> {

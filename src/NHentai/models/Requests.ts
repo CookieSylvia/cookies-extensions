@@ -88,23 +88,6 @@ export const Requests = {
       url: Paths.search(query, page, sort),
       method: 'GET',
     });
-    // TODO: Untested, keep below for now.
-    // Destructing this doesn't seem to work correctly... for some reason.
-    // const response = await requests.schedule(request, 1);
-
-    // if (response.data && isStatusSuccess(response.status)) {
-    //   return {
-    //     data: response.data,
-    //     status: response.status,
-    //     cfChallenge: isChallenged(response),
-    //     parsed: GalleryParser.books(JSON.parse(response.data)),
-    //   };
-    // }
-    // return {
-    //   data: response.data,
-    //   status: response.status,
-    //   cfChallenge: isChallenged(response),
-    // };
     return await getParsed(requests, request, acceptJson(GalleryParser.books));
   },
 
