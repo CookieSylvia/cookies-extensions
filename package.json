@@ -1,12 +1,13 @@
 {
   "name": "cookies-extensions",
   "version": "1.0.0",
-  "repositoryName": "Cookie's Extensions (template)",
+  "repositoryName": "Cookie's Extensions (0.8)",
   "description": "Cookie's extensions for Paperback!",
   "scripts": {
-    "bundle": "paperback bundle",
-    "serve": "paperback serve",
-    "test": "mocha --timeout 300000 -r ts-node/register src/**/*.test.ts",
+    "migrate": "npx paperback migrate",
+    "bundle": "npx paperback bundle",
+    "serve": "npx paperback serve",
+    "dev": "npx nodemon --watch \"**/*.ts\" --ext \"js ts\" --exec \"npm run serve\"",
     "eslint": "eslint src"
   },
   "repository": "github:ItemCookie/cookies-extensions",
@@ -16,23 +17,19 @@
   },
   "homepage": "https://github.com/ItemCookie/cookies-extensions",
   "license": "MIT",
-  "dependencies": {
-    "paperback-cli": "^2.0.0-alpha.13",
-    "paperback-extensions-common": "^5.0.0-alpha.7",
-    "ts-node": "^10.9.1"
-  },
   "devDependencies": {
-    "@types/chai": "^4.3.1",
-    "@types/chai-as-promised": "^7.1.5",
-    "@types/cheerio": "0.22.0",
-    "@types/mocha": "^9.1.1",
-    "@typescript-eslint/eslint-plugin": "^5.30.6",
-    "@typescript-eslint/parser": "^5.30.6",
-    "chai": "^4.3.6",
-    "chai-as-promised": "^7.1.1",
-    "eslint": "^8.19.0",
-    "eslint-plugin-canonical": "^3.1.0",
-    "mocha": "^10.0.0",
-    "typescript": "^4.7.4"
+    "@tsconfig/recommended": "^1.0.1",
+    "@types/cheerio": "0.22.21",
+    "@typescript-eslint/eslint-plugin": "^5.1.0",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint": "^8.42.0",
+    "eslint-plugin-modules-newline": "^0.0.6",
+    "eslint-plugin-canonical": "^4.2.2",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "@paperback/toolchain": "^0.8.0-alpha.47",
+    "@paperback/types": "^0.8.0-alpha.47",
+    "cheerio": "^1.0.0-rc.12"
   }
 }

@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [20.x]
 
     steps:
       - name: Checkout Branch
@@ -22,10 +22,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v7
 
       - name: Checkout existing bundles
         uses: actions/checkout@v3
@@ -35,7 +34,7 @@ jobs:
           path: bundles
 
       - run: npm install
-      - run: npm run bundle -- --folder=${{ steps.extract_branch.outputs.branch }}
+      - run: npm run bundle -- --folder=${{ steps.branch-name.outputs.current_branch }}
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

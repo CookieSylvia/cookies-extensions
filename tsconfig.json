@@ -3,8 +3,8 @@
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 
     /* Basic Options */
-    "target": "ES2020",
-    "module": "commonjs",
+    "target": "ES6",
+    "module": "CommonJS",
     "outDir": "./lib",
     "rootDir": "./src",
     

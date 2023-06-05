@@ -1,9 +1,5 @@
-name: Bundle and Publish Sources
-on:
-  delete:
-    branches:
-      - '**'
-      - '!main'
+name: Clean up
+on: delete
 jobs:
   delete:
     if: github.event.ref_type == 'branch'
