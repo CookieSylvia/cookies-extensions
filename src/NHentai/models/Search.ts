@@ -1,17 +1,21 @@
 import {
   PartialSourceManga,
   RequestManager,
-  SourceStateManager, 
+  SourceStateManager,
 } from '@paperback/types';
 import { Data } from '../Data';
 import { LangDefs } from './Languages';
 import {
   asArray,
-  checkCloudflare, 
+  checkCloudflare,
 } from '../Utils';
 import { SortDefs } from './Sorting';
 import { Requests } from './Requests';
 import { BookParser } from './BookParser';
+import {
+  Resettings,
+  SettingKeys, 
+} from '../Resettings';
 
 /**
  * The objects used for searching.
@@ -149,6 +153,7 @@ export interface SearchResults {
    * The status code returned by the search request.
    */
   status?: number;
+  challenged?: boolean;
   /**
    * Wether the current page should be skipped.
    */
@@ -197,14 +202,8 @@ export const Search = {
     let partials: PartialSourceManga[] = [];
     const history: SearchEntry[] = [];
     for (let i = 0; i < pages; i++) {
-      let results: SearchResults | undefined;
-      try {
-        results = await Search.search(ctx, objects, metadata);
-      } finally {
-        if (results != undefined) {
-          history.push({ ctx: ctx, results: results });
-        }
-      }
+      const results = await Search.search(ctx, objects, metadata);
+      history.push({ ctx: ctx, results: results });
 
       partials = partials.concat(results.partials ?? []);
       metadata = results.metadata;
@@ -220,6 +219,8 @@ export const Search = {
     };
   },
 
+
+
   /**
    * Searches for books using provided context, objects & metadata with either the book id, API or fallback search.\
    * This method has extra capabilities. (E.g. page skipping, fallback) over the other search methods, and
@@ -231,6 +232,24 @@ export const Search = {
    * @returns The search results.
    */
   search: async (ctx: SearchContext, objects: SearchObjects, metadata?: SearchMetadata): Promise<SearchResults> => {
+    let results: SearchResults | undefined;
+    try {
+      results = await Search.searchInternal(ctx, objects, metadata);
+    } finally {
+      // #add only does something when history is enabled.
+      await Resettings.addHistoryEntry(objects.states, ctx, results);
+    }
+    return results;
+  },
+
+  /**
+   * Used for searching without side-effects for internal use, use {@link Search.search} instead.
+   * @param ctx The search context.
+   * @param objects The search objects.
+   * @param metadata The persistant search metadata.
+   * @returns The search results.
+   */
+  searchInternal: async (ctx: SearchContext, objects: SearchObjects, metadata?: SearchMetadata): Promise<SearchResults> => {
     let page = metadata?.nextPage ?? 1;
     // 3 pages. | page, page + 1, page + 2
     const softMax = page + 2;
@@ -253,7 +272,7 @@ export const Search = {
       throw new Error(`Search doesn't support text searches that matches book ids. (${ctx.text})`);
     }
 
-    const alwaysFallback = objects.states != undefined && (/*TODO: await getAlwaysFallback(objects.states)*/ false);
+    const alwaysFallback = await Resettings.get(objects.states, SettingKeys.AlwaysFallback) ?? false;
 
     while (page <= (metadata?.maxPage ?? softMax)) {
       if (!alwaysFallback) {
@@ -299,7 +318,7 @@ export const Search = {
   /**
    * Searches for books using provided context, objects & metadata with the API.\
    * *If {@link SearchMetadata.maxPage} is undefined, care should be taken for the next page.*
-   * ***Prefer using {@link Search.search} instead***
+   * ***Prefer using {@link Search.searchInternal} instead***
    * @param ctx The search context.
    * @param objects The search objects.
    * @param metadata The persistant search metadata.
@@ -337,6 +356,7 @@ export const Search = {
           shouldStop,
         },
         status: data.status,
+        challenged: data.cfChallenge,
         reason: shouldStop ? 'End of pages.' : 'Search',
       };
     }
@@ -354,6 +374,7 @@ export const Search = {
         },
         skip: shouldSkip,
         status: data.status,
+        challenged: data.cfChallenge,
         reason: shouldSkip ? 'Search skipped.' : 'Skipped to end of pages.',
       };
     }
@@ -363,7 +384,7 @@ export const Search = {
   /**
    * Searches for books using provided context, objects & metadata with the fallback page scraping.\
    * *If {@link SearchMetadata.maxPage} is undefined, care should be taken for the next page.*
-   * ***Prefer using {@link Search.search} instead***
+   * ***Prefer using {@link Search.searchInternal} instead***
    * @param ctx The search context.
    * @param objects The search objects.
    * @param metadata The persistant search metadata.
@@ -415,6 +436,7 @@ export const Search = {
           shouldStop,
         },
         status: data.status,
+        challenged: data.cfChallenge,
         reason: shouldStop ? 'End of pages. (Fallback)' : 'Search (Fallback)',
         fallback: true,
       };
@@ -431,6 +453,7 @@ export const Search = {
         },
         skip: !shouldStop,
         status: data.status,
+        challenged: data.cfChallenge,
         reason: shouldStop ? 'Skipped to end of pages. (Fallback)' : 'Search skipped. (Fallback)',
         fallback: true,
       };
@@ -440,7 +463,7 @@ export const Search = {
 
   /**
    * Searches for the book's identifier.\
-   * ***Prefer using {@link Search.search} instead***
+   * ***Prefer using {@link Search.searchInternal} instead***
    * @param ctx The search context.
    * @param objects The search objects.
    * @returns The search results.
@@ -459,6 +482,7 @@ export const Search = {
           shouldStop: true,
         },
         status: data.status,
+        challenged: data.cfChallenge,
         reason: 'Search by book id.',
       };
     }
@@ -470,6 +494,7 @@ export const Search = {
           shouldStop: true,
         },
         status: data.status,
+        challenged: data.cfChallenge,
         reason: 'Book id not found.',
       };
     }
@@ -526,12 +551,12 @@ export const Search = {
     }
     let langCtx = Search.createLanguageContext(options?.languages);
     if (langCtx.empty) {
-      langCtx = Search.createLanguageContext(/*TODO: await getLanguage(states)*/ 'english');
+      langCtx = Search.createLanguageContext(await Resettings.get(states, SettingKeys.Language));
     }
     return Search.create(text, {
-      suffix: options?.suffix ?? (/*TODO: await getSearchSuffix(states)*/''),
+      suffix: options?.suffix ?? (await Resettings.get(states, SettingKeys.SearchSuffix)),
       languages: langCtx,
-      sort: options?.sort ?? (/*TODO: await getSorting(states)*/'date'),
+      sort: options?.sort ?? (await Resettings.get(states, SettingKeys.Sorting)),
       empty: options?.empty,
     });
   },
@@ -588,7 +613,7 @@ export const Search = {
   emitLanguagesWithSettings: async (options?: LanguageOptions, states?: SourceStateManager): Promise<string> => {
     let langCtx = Search.createLanguageContext(options);
     if (langCtx.empty && states != undefined) {
-      langCtx = Search.createLanguageContext(/*TODO: await getLanguage(states)*/ 'english');
+      langCtx = Search.createLanguageContext(await Resettings.get(states, SettingKeys.Language));
     }
     return Search.emitLanguages(langCtx);
   },

@@ -69,7 +69,7 @@ export const BookParser = {
       mangaId: book.bookId.toString(),
       image: Paths.galleryCover(book.mediaId, book.images.cover.type as string),
       title: book.titles.pretty,
-      subtitle: LangDefs.getSubtitle(getLanguages(book)),
+      subtitle: LangDefs.getSubtitle(getLanguages(book), true),
     }),
 
   /**
@@ -82,7 +82,7 @@ export const BookParser = {
       mangaId: booklet.bookId,
       image: booklet.thumbnail,
       title: booklet.title,
-      subtitle: booklet.languages.length > 0 ? `${LangDefs.getSubtitle(booklet.languages)}?` : 'Fallback',
+      subtitle: booklet.languages.length > 0 ? `${LangDefs.getSubtitle(booklet.languages, true)}?` : 'Fallback',
     }),
 
   /**
@@ -96,7 +96,7 @@ export const BookParser = {
       id: mangaId ?? book.bookId.toString(),
       chapNum: 1,
       name: book.titles.english,
-      langCode: LangDefs.getPriorityShortName(getLanguages(book)),
+      langCode: LangDefs.getSubtitle(getLanguages(book), true, true),
       time: new Date(book.uploaded),
     }),
 

@@ -11,7 +11,7 @@ export interface Path {
 const construct = (path: Path, replacements: Record<string, string>): string => {
   const url = (Urls as Record<string, string>)[path.baseUrl];
   if (url == undefined) {
-    throw new Error(`Unable to construct path, unknown host '${path.baseUrl}'`);
+    throw new Error(`Unable to construct path, unknown baseUrl '${path.baseUrl}'`);
   }
   return format(`${url}${path.path}`, replacements);
 };
@@ -25,7 +25,7 @@ export const Paths = {
      * @returns The url.
      */
   search: (query: string, page: number | string = 1, sort?: string) =>
-    construct(sort ? Data.nhentai.paths.search : Data.nhentai.paths.searchSorted, {
+    construct(!sort ? Data.nhentai.paths.search : Data.nhentai.paths.searchSorted, {
       query: query,
       encoded_query: encodeURIComponent(query),
       page: page.toString(),
@@ -40,7 +40,7 @@ export const Paths = {
      * @returns The url.
      */
   searchFallback: (query: string, page: number | string = 1, sort?: string) =>
-    construct(sort ? Data.nhentai.paths.searchFallback : Data.nhentai.paths.searchSortedFallback, {
+    construct(!sort ? Data.nhentai.paths.searchFallback : Data.nhentai.paths.searchSortedFallback, {
       query: query,
       encoded_query: encodeURIComponent(query),
       page: page.toString(),

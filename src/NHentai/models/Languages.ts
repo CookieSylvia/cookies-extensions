@@ -210,12 +210,12 @@ export class LanguageDefinitions {
    * @param sort Wether to sort the sources first.
    * @returns The source(s) combined into a subtitle.
    */
-  getSubtitle(sources: string[], sort = true): string {
+  getSubtitle(sources: string[], sort = true, alwaysShort = false): string {
     const filtered = this.getFilteredSources(sources, sort);
     if (filtered.length <= 0) {
-      return 'Unknown';
+      return alwaysShort ? '??' : 'Unknown';
     }
-    if (filtered.length === 1) {
+    if (filtered.length === 1 && !alwaysShort) {
       return this.getName(filtered[0] ?? 'Unknown');
     }
     return filtered.map((lang) => this.getShortName(lang)).join('|');

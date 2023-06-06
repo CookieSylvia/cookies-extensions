@@ -36,6 +36,12 @@ import {
 import { Tags } from './Data';
 import { checkCloudflare } from './Utils';
 import { Data } from './Data';
+import {
+  Resettings,
+  SettingKeys,
+  resetSettings,
+} from './Resettings';
+import { settingsNavButton } from './ui/SettingsUI';
 
 export const NHentaiInfo: SourceInfo = {
   version: Data.info.version,
@@ -90,12 +96,16 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   readonly stateManager = App.createSourceStateManager();
 
   async getSourceMenu(): Promise<DUISection> {
-    return Promise.resolve(App.createDUISection({
+    return App.createDUISection({
       id: 'main',
       header: 'Source Settings',
-      rows: () => Promise.resolve([]),
+      footer: 'You might need to restart the app for some changes to apply visually.',
       isHidden: false,
-    }));
+      rows: async () => [
+        settingsNavButton(this.stateManager, this.requestManager),
+        resetSettings(this.stateManager),
+      ],
+    });
   }
 
   async getSearchResults(query: SearchRequest, metadata: SearchMetadata): Promise<PagedResults> {
@@ -108,8 +118,8 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
       suffix: this.resolvesTag(query.includedTags, Tags.withoutSuffix) ? '' : undefined,
     });
 
-    // TODO: Setting for 1 or 2 pages
-    const results = await Search.searchMany(2, ctx, this.getSearchObjects(), metadata);
+    const double = await Resettings.get(this.stateManager, SettingKeys.DoubleSearch);
+    const results = await Search.searchMany(double ? 2 : 1, ctx, this.getSearchObjects(), metadata);
 
     return App.createPagedResults({
       results: results.partials,
@@ -117,7 +127,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
     });
   }
 
-  async getSearchTags?(): Promise<TagSection[]> {
+  async getSearchTags(): Promise<TagSection[]> {
     const sections: Record<string, TagSection> = {};
 
     sections.sorting = App.createTagSection({
@@ -185,7 +195,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         App.createHomeSection({
           id: source,
           title: SortDefs.getName(source),
-          type: HomeSectionType.singleRowNormal,
+          type: HomeSectionType.singleRowNormal, // TODO: Maybe change? not sure what this does yet.
           containsMoreItems: true,
         }),
       );
@@ -197,6 +207,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         Search.createWithSettings(this.stateManager, undefined, { sort: section.id }).then(async (ctx) => {
           const results = await Search.search(ctx, this.getSearchObjects(), {});
           section.items = results.partials ?? [];
+          section.containsMoreItems = results.metadata.shouldStop === false && section.items.length > 0;
           sectionCallback(section);
         }),
       );

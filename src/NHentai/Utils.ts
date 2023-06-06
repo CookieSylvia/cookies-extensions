@@ -1,4 +1,4 @@
-import { NHentaiInfo } from './NHentai';
+import { Data } from './Data';
 
 /**
  * A simple string formatter, which replaces named {curly_braces}
@@ -79,6 +79,6 @@ export const dumbify = (smart: string): string => {
  */
 export const checkCloudflare = (challenged: boolean) => {
   if (challenged) {
-    throw new Error(`Cloudflare Challenge:\nPlease go to the homepage of ${NHentaiInfo.name} and press the cloud icon.`);
+    throw new Error(`Cloudflare Challenge:\nPlease go to the homepage of ${Data.info.name} and press the cloud icon.`);
   }
 };
