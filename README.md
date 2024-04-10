@@ -5,10 +5,10 @@ Currently no support provided for these sources.
 
 ## Current Repo
 
-| Source Type        | Description                                          | Link                                                                   |
-| :----------------- | :--------------------------------------------------- | :--------------------------------------------------------------------: |
-| Development (nsfw) | Development versions of the NSFW sources. (Unstable) | [Click me!](https://itemcookie.github.io/cookies-extensions/dev-nsfw/) |
-| 0.8                | For Paperback 0.8 (Somewhat Stable)                  | [Click me!](https://itemcookie.github.io/cookies-extensions/0.8/)      |
+| Source Type        | Description                                          | Link                                                                     |
+| :----------------- | :--------------------------------------------------- | :----------------------------------------------------------------------: |
+| Development (nsfw) | Development versions of the NSFW sources. (Unstable) | [Click me!](https://cookiesylvia.github.io/cookies-extensions/dev-nsfw/) |
+| 0.8                | For Paperback 0.8 (Somewhat Stable)                  | [Click me!](https://cookiesylvia.github.io/cookies-extensions/0.8/)      |
 
 ---
 
