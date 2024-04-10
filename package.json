@@ -9,12 +9,12 @@
     "test": "mocha --timeout 300000 -r ts-node/register src/**/*.test.ts",
     "eslint": "eslint src"
   },
-  "repository": "github:ItemCookie/cookies-extensions",
-  "author": "ItemCookie",
+  "repository": "github:CookieSylvia/cookies-extensions",
+  "author": "CookieSylvia",
   "bugs": {
-    "url": "https://github.com/ItemCookie/cookies-extensions/issues"
+    "url": "https://github.com/CookieSylvia/cookies-extensions/issues"
   },
-  "homepage": "https://github.com/ItemCookie/cookies-extensions",
+  "homepage": "https://github.com/CookieSylvia/cookies-extensions",
   "license": "MIT",
   "dependencies": {
     "paperback-cli": "^2.0.0-alpha.13",
