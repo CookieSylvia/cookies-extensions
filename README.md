@@ -1,6 +1,6 @@
 # Cookie's Repo Index
 
-[Github Repo](https://github.com/ItemCookie/cookies-extensions)  
+[Github Repo](https://github.com/CookieSylvia/cookies-extensions)  
 Currently no support provided for these sources.
 
 ## Current Repo
