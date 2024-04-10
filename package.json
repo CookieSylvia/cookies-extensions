@@ -10,12 +10,12 @@
     "dev": "npx nodemon --watch \"**/*.ts\" --ext \"js ts\" --exec \"npm run serve\"",
     "eslint": "eslint src"
   },
-  "repository": "github:ItemCookie/cookies-extensions",
-  "author": "ItemCookie",
+  "repository": "github:CookieSylvia/cookies-extensions",
+  "author": "CookieSylvia",
   "bugs": {
-    "url": "https://github.com/ItemCookie/cookies-extensions/issues"
+    "url": "https://github.com/CookieSylvia/cookies-extensions/issues"
   },
-  "homepage": "https://github.com/ItemCookie/cookies-extensions",
+  "homepage": "https://github.com/CookieSylvia/cookies-extensions",
   "license": "MIT",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
