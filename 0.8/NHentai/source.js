@@ -1078,8 +1078,8 @@ module.exports={
 module.exports={
     "name": "nhentai",
     "version": "3.0.0",
-    "author": "ItemCookie",
-    "website": "https://github.com/ItemCookie/cookies-extensions",
+    "author": "CookieSylvia",
+    "website": "https://github.com/CookieSylvia/cookies-extensions",
     "description": "Extension which pulls 18+ content from nhentai."
 }
 
