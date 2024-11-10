@@ -91,9 +91,10 @@ export interface Images {
 }
 
 export enum ImageType {
-  JPG = 'jpg',
-  PNG = 'png',
-  GIF = 'gif',
+  Jpg = 'jpg',
+  Png = 'png',
+  Gif = 'gif',
+  WebP = 'webp'
 }
 
 /**

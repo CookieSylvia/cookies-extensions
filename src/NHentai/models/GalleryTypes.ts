@@ -85,9 +85,9 @@ export interface GalleryImages {
 export interface GalleryImage {
   /**
      * The image's format.\
-     * [j]pg, [p]ng, [g]if
+     * [j]pg, [p]ng, [g]if, [w]ebp
      */
-  t: 'j' | 'p' | 'g';
+  t: 'j' | 'p' | 'g' | 'w';
   /**
      * The image's width.
      */

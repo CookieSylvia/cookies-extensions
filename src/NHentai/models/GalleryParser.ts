@@ -19,14 +19,16 @@ import {
 } from './GalleryTypes';
 import { LangDefs } from './Languages';
 
-const getType = (type: 'j' | 'p' | 'g'): ImageType => {
+const getType = (type: string): ImageType => {
   switch (type) {
     case 'j':
-      return ImageType.JPG;
+      return ImageType.Jpg;
     case 'p':
-      return ImageType.PNG;
+      return ImageType.Png;
     case 'g':
-      return ImageType.GIF;
+      return ImageType.Gif;
+    case 'w':
+      return ImageType.WebP;
   }
   // Unreachable, but is there just in case.
   throw new Error(`Unable to parse image type '${type}'`);
