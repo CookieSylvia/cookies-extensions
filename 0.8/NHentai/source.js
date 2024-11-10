@@ -1077,7 +1077,7 @@ module.exports={
 },{}],67:[function(require,module,exports){
 module.exports={
     "name": "nhentai",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "author": "CookieSylvia",
     "website": "https://github.com/CookieSylvia/cookies-extensions",
     "description": "Extension which pulls 18+ content from nhentai."
@@ -1186,9 +1186,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookTagType = exports.ImageType = void 0;
 var ImageType;
 (function (ImageType) {
-    ImageType["JPG"] = "jpg";
-    ImageType["PNG"] = "png";
-    ImageType["GIF"] = "gif";
+    ImageType["Jpg"] = "jpg";
+    ImageType["Png"] = "png";
+    ImageType["Gif"] = "gif";
+    ImageType["WebP"] = "webp";
 })(ImageType || (exports.ImageType = ImageType = {}));
 var BookTagType;
 (function (BookTagType) {
@@ -1210,11 +1211,13 @@ const Languages_1 = require("./Languages");
 const getType = (type) => {
     switch (type) {
         case 'j':
-            return BookTypes_1.ImageType.JPG;
+            return BookTypes_1.ImageType.Jpg;
         case 'p':
-            return BookTypes_1.ImageType.PNG;
+            return BookTypes_1.ImageType.Png;
         case 'g':
-            return BookTypes_1.ImageType.GIF;
+            return BookTypes_1.ImageType.Gif;
+        case 'w':
+            return BookTypes_1.ImageType.WebP;
     }
     // Unreachable, but is there just in case.
     throw new Error(`Unable to parse image type '${type}'`);
