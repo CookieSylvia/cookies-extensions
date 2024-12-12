@@ -1088,7 +1088,7 @@ module.exports={
 },{}],67:[function(require,module,exports){
 module.exports={
     "name": "nhentai",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "author": "CookieSylvia",
     "website": "https://github.com/CookieSylvia/cookies-extensions",
     "description": "Extension which pulls 18+ content from nhentai."
@@ -1150,7 +1150,7 @@ exports.BookParser = {
        */
     partial: (book) => App.createPartialSourceManga({
         mangaId: book.bookId.toString(),
-        image: Urls_1.Paths.galleryThumbnail(book.mediaId, book.images.cover.type),
+        image: Urls_1.Paths.galleryThumbnail(book.mediaId, book.images.thumbnail.type),
         title: book.titles.pretty,
         subtitle: Languages_1.LangDefs.getSubtitle(getLanguages(book), true),
     }),
