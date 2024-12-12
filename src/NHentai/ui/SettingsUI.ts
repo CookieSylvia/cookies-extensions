@@ -4,6 +4,7 @@ import {
 } from '@paperback/types';
 import {
   LangDefs,
+  Paths,
   SortDefs, 
 } from '../models';
 import {
@@ -65,6 +66,11 @@ export const noticesMoreSection = (states: SourceStateManager, requests: Request
         id: 'notice_unstable',
         label: 'Unstable',
         value: 'Changing settings is very unstable atm. but it should still be possible with a few tries.\n(As far as I know, this is a bug in the app? Since the official extension settings also crashes sometimes.)',
+      }),
+      App.createDUIMultilineLabel({
+        id: 'notice_images',
+        label: 'Image Server',
+        value: `Available: ${Data.nhentai.imageServers}\nLast used: ${Paths.imageServer}`,
       }),
       App.createDUIMultilineLabel({
         id: 'notice_ua',

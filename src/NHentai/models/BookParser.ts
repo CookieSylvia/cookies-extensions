@@ -67,7 +67,7 @@ export const BookParser = {
   partial: (book: Book): PartialSourceManga =>
     App.createPartialSourceManga({
       mangaId: book.bookId.toString(),
-      image: Paths.galleryCover(book.mediaId, book.images.cover.type as string),
+      image: Paths.galleryThumbnail(book.mediaId, book.images.cover.type as string),
       title: book.titles.pretty,
       subtitle: LangDefs.getSubtitle(getLanguages(book), true),
     }),

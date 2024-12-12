@@ -13,10 +13,20 @@ const construct = (path: Path, replacements: Record<string, string>): string => 
   if (url == undefined) {
     throw new Error(`Unable to construct path, unknown baseUrl '${path.baseUrl}'`);
   }
-  return format(`${url}${path.path}`, replacements);
+  return format(`${url}${path.path}`, {
+    image_server: Paths.imageServer,
+
+    ...replacements,
+  });
 };
 
 export const Paths = {
+  
+  imageServer: '1',
+  randomizeImageServer: () => {
+    Paths.imageServer = `${Math.floor(Math.random() * Data.nhentai.imageServers) + 1}`;
+  },
+
   /**
      * Search by query path.
      * @param query The search query.
@@ -55,6 +65,18 @@ export const Paths = {
   gallery: (bookId: number | string) =>
     construct(Data.nhentai.paths.gallery, {
       book_id: bookId.toString(),
+    }),
+
+  /**
+     * Gallery's thumbnail image path.
+     * @param mediaId The mediaId. (This is different from bookId)
+     * @param extension Image extension
+     * @returns The url.
+     */
+  galleryThumbnail: (mediaId: number | string, extension: string) =>
+    construct(Data.nhentai.paths.galleryThumbnail, {
+      media_id: mediaId.toString(),
+      extension: extension,
     }),
 
   /**

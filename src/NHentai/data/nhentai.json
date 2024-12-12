@@ -1,10 +1,11 @@
 {
   "emptySearch": "pages:>0",
   "bookRegex": "^\\s*#?\\s*(\\d+)\\s*$",
+  "imageServers": 4,
   "urls": {
     "api": "https://nhentai.net",
-    "thumbnails": "https://t.nhentai.net",
-    "images": "https://i.nhentai.net",
+    "thumbnails": "https://t{image_server}.nhentai.net",
+    "images": "https://i{image_server}.nhentai.net",
     "cloudflare": "https://nhentai.net"
   },
   "paths": {
@@ -27,6 +28,10 @@
     "gallery": {
       "path": "/api/gallery/{book_id}",
       "baseUrl": "api"
+    },
+    "galleryThumbnail": {
+      "path": "/galleries/{media_id}/thumb.{extension}",
+      "baseUrl": "thumbnails"
     },
     "galleryCover": {
       "path": "/galleries/{media_id}/cover.{extension}",

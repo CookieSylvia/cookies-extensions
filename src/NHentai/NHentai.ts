@@ -26,6 +26,7 @@ import {
   BookParser,
   LangDefs,
   Parsed,
+  Paths,
   Requests,
   Search,
   SearchMetadata,
@@ -109,6 +110,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
 
   async getSearchResults(query: SearchRequest, metadata: SearchMetadata): Promise<PagedResults> {
+    Paths.randomizeImageServer();
     const ctx = await Search.createWithSettings(this.stateManager, query.title, {
       languages: {
         include: this.resolveLangauges(query.includedTags),
@@ -166,6 +168,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
   
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
+    Paths.randomizeImageServer();
     const data = await Requests.book(this.requestManager, mangaId);
     const parsed = this.checkErrors(data);
     return BookParser.manga(parsed);
@@ -176,6 +179,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
 
   async getChapters(mangaId: string): Promise<Chapter[]> {
+    Paths.randomizeImageServer();
     const data = await Requests.book(this.requestManager, mangaId);
     const parsed = this.checkErrors(data);
     return [BookParser.chapter(parsed, mangaId)];
@@ -183,19 +187,21 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getChapterDetails(mangaId: string, _chapterId: string): Promise<ChapterDetails> {
+    Paths.randomizeImageServer();
     const data = await Requests.book(this.requestManager, mangaId);
     const parsed = this.checkErrors(data);
     return BookParser.chapterDetails(parsed, mangaId);
   }
 
   async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
+    Paths.randomizeImageServer();
     const sections: HomeSection[] = [];
     for (const source of SortDefs.getSources(true)) {
       sections.push(
         App.createHomeSection({
           id: source,
           title: SortDefs.getName(source),
-          type: HomeSectionType.singleRowNormal, // TODO: Maybe change? not sure what this does yet.
+          type: HomeSectionType.singleRowNormal,
           containsMoreItems: true,
         }),
       );
@@ -217,6 +223,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
   }
 
   async getViewMoreItems(homepageSectionId: string, metadata: SearchMetadata): Promise<PagedResults> {
+    Paths.randomizeImageServer();
     const ctx = await Search.createWithSettings(this.stateManager, undefined, { sort: homepageSectionId });
     const results = await Search.search(ctx, this.getSearchObjects(), metadata);
 
