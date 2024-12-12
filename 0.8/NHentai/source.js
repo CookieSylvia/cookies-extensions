@@ -578,6 +578,7 @@ class NHentai {
     }
     getSearchResults(query, metadata) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const ctx = yield models_1.Search.createWithSettings(this.stateManager, query.title, {
                 languages: {
                     include: this.resolveLangauges(query.includedTags),
@@ -631,6 +632,7 @@ class NHentai {
     }
     getMangaDetails(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const data = yield models_1.Requests.book(this.requestManager, mangaId);
             const parsed = this.checkErrors(data);
             return models_1.BookParser.manga(parsed);
@@ -641,6 +643,7 @@ class NHentai {
     }
     getChapters(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const data = yield models_1.Requests.book(this.requestManager, mangaId);
             const parsed = this.checkErrors(data);
             return [models_1.BookParser.chapter(parsed, mangaId)];
@@ -649,6 +652,7 @@ class NHentai {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getChapterDetails(mangaId, _chapterId) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const data = yield models_1.Requests.book(this.requestManager, mangaId);
             const parsed = this.checkErrors(data);
             return models_1.BookParser.chapterDetails(parsed, mangaId);
@@ -656,6 +660,7 @@ class NHentai {
     }
     getHomePageSections(sectionCallback) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const sections = [];
             for (const source of models_1.SortDefs.getSources(true)) {
                 sections.push(App.createHomeSection({
@@ -681,6 +686,7 @@ class NHentai {
     }
     getViewMoreItems(homepageSectionId, metadata) {
         return __awaiter(this, void 0, void 0, function* () {
+            models_1.Paths.randomizeImageServer();
             const ctx = yield models_1.Search.createWithSettings(this.stateManager, undefined, { sort: homepageSectionId });
             const results = yield models_1.Search.search(ctx, this.getSearchObjects(), metadata);
             return App.createPagedResults({
@@ -979,10 +985,11 @@ exports.checkCloudflare = checkCloudflare;
 module.exports={
     "emptySearch": "pages:>0",
     "bookRegex": "^\\s*#?\\s*(\\d+)\\s*$",
+    "imageServers": 4,
     "urls": {
         "api": "https://nhentai.net",
-        "thumbnails": "https://t.nhentai.net",
-        "images": "https://i.nhentai.net",
+        "thumbnails": "https://t{image_server}.nhentai.net",
+        "images": "https://i{image_server}.nhentai.net",
         "cloudflare": "https://nhentai.net"
     },
     "paths": {
@@ -1005,6 +1012,10 @@ module.exports={
         "gallery": {
             "path": "/api/gallery/{book_id}",
             "baseUrl": "api"
+        },
+        "galleryThumbnail": {
+            "path": "/galleries/{media_id}/thumb.{extension}",
+            "baseUrl": "thumbnails"
         },
         "galleryCover": {
             "path": "/galleries/{media_id}/cover.{extension}",
@@ -1077,7 +1088,7 @@ module.exports={
 },{}],67:[function(require,module,exports){
 module.exports={
     "name": "nhentai",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "author": "CookieSylvia",
     "website": "https://github.com/CookieSylvia/cookies-extensions",
     "description": "Extension which pulls 18+ content from nhentai."
@@ -1139,7 +1150,7 @@ exports.BookParser = {
        */
     partial: (book) => App.createPartialSourceManga({
         mangaId: book.bookId.toString(),
-        image: Urls_1.Paths.galleryCover(book.mediaId, book.images.cover.type),
+        image: Urls_1.Paths.galleryThumbnail(book.mediaId, book.images.cover.type),
         title: book.titles.pretty,
         subtitle: Languages_1.LangDefs.getSubtitle(getLanguages(book), true),
     }),
@@ -2154,9 +2165,13 @@ const construct = (path, replacements) => {
     if (url == undefined) {
         throw new Error(`Unable to construct path, unknown baseUrl '${path.baseUrl}'`);
     }
-    return (0, Utils_1.format)(`${url}${path.path}`, replacements);
+    return (0, Utils_1.format)(`${url}${path.path}`, Object.assign({ image_server: exports.Paths.imageServer }, replacements));
 };
 exports.Paths = {
+    imageServer: '1',
+    randomizeImageServer: () => {
+        exports.Paths.imageServer = `${Math.floor(Math.random() * Data_1.Data.nhentai.imageServers) + 1}`;
+    },
     /**
        * Search by query path.
        * @param query The search query.
@@ -2190,6 +2205,16 @@ exports.Paths = {
        */
     gallery: (bookId) => construct(Data_1.Data.nhentai.paths.gallery, {
         book_id: bookId.toString(),
+    }),
+    /**
+       * Gallery's thumbnail image path.
+       * @param mediaId The mediaId. (This is different from bookId)
+       * @param extension Image extension
+       * @returns The url.
+       */
+    galleryThumbnail: (mediaId, extension) => construct(Data_1.Data.nhentai.paths.galleryThumbnail, {
+        media_id: mediaId.toString(),
+        extension: extension,
     }),
     /**
        * Gallery's cover image path.
@@ -2317,6 +2342,11 @@ const noticesMoreSection = (states, requests) => App.createDUISection({
                 id: 'notice_unstable',
                 label: 'Unstable',
                 value: 'Changing settings is very unstable atm. but it should still be possible with a few tries.\n(As far as I know, this is a bug in the app? Since the official extension settings also crashes sometimes.)',
+            }),
+            App.createDUIMultilineLabel({
+                id: 'notice_images',
+                label: 'Image Server',
+                value: `Available: ${Data_1.Data.nhentai.imageServers}\nLast used: ${models_1.Paths.imageServer}`,
             }),
             App.createDUIMultilineLabel({
                 id: 'notice_ua',
